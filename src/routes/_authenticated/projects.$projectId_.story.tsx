@@ -437,7 +437,7 @@ function GenerateBar({
   onRun: () => void;
   running: boolean;
   disabled: boolean;
-  hint?: string;
+  hint?: string | undefined;
 }) {
   return (
     <div className="panel flex flex-wrap items-center gap-3 rounded-xl border border-border p-4">
