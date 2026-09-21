@@ -23,6 +23,7 @@ import {
   episodesQuery,
   projectKeys,
   projectQuery,
+  seasonsQuery,
 } from "@/modules/projects/project.queries";
 import {
   createEpisode,
@@ -60,6 +61,7 @@ function ProjectDetail() {
   const navigate = useNavigate();
   const { data: project, isLoading } = useQuery(projectQuery(projectId));
   const { data: episodes } = useQuery(episodesQuery(projectId));
+  const { data: seasons } = useQuery(seasonsQuery(projectId));
   const [episodeTitle, setEpisodeTitle] = useState("");
 
   const save = useMutation({
@@ -125,6 +127,7 @@ function ProjectDetail() {
         <ArrowLeft className="size-4" />
         Productions
       </Link>
+      <ProjectNav projectId={projectId} />
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
