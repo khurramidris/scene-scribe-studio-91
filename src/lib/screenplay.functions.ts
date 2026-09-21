@@ -349,6 +349,12 @@ export const regenerateScene = createServerFn({ method: "POST" })
     }
 
     const { lines, characters } = await buildBrief(supabase, scene.project_id, scene.episode_id);
+    const { data: screenplayRow } = await supabase
+      .from("screenplays")
+      .select("language")
+      .eq("id", scene.screenplay_id)
+      .maybeSingle();
+    const sceneLanguage = screenplayRow?.language ?? "en";
     const { data: siblings } = await supabase
       .from("scenes")
       .select("scene_number, heading, objective")
