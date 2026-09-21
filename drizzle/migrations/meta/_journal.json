@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789981877083,
+      "tag": "0000_core_foundation_profiles_roles_projects",
+      "breakpoints": true
+    }
+  ]
 }

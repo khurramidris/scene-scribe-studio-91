@@ -14,16 +14,223 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      episodes: {
+        Row: {
+          created_at: string
+          id: string
+          logline: string | null
+          number: number
+          owner_id: string
+          project_id: string
+          season_id: string | null
+          status: Database["public"]["Enums"]["project_status"]
+          synopsis: string | null
+          target_duration_seconds: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logline?: string | null
+          number?: number
+          owner_id: string
+          project_id: string
+          season_id?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          synopsis?: string | null
+          target_duration_seconds?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logline?: string | null
+          number?: number
+          owner_id?: string
+          project_id?: string
+          season_id?: string | null
+          status?: Database["public"]["Enums"]["project_status"]
+          synopsis?: string | null
+          target_duration_seconds?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "episodes_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string
+          format: Database["public"]["Enums"]["aspect_format"]
+          genre: string | null
+          id: string
+          language: string
+          logline: string | null
+          owner_id: string
+          settings: Json
+          status: Database["public"]["Enums"]["project_status"]
+          synopsis: string | null
+          title: string
+          tone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string
+          format?: Database["public"]["Enums"]["aspect_format"]
+          genre?: string | null
+          id?: string
+          language?: string
+          logline?: string | null
+          owner_id: string
+          settings?: Json
+          status?: Database["public"]["Enums"]["project_status"]
+          synopsis?: string | null
+          title: string
+          tone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string
+          format?: Database["public"]["Enums"]["aspect_format"]
+          genre?: string | null
+          id?: string
+          language?: string
+          logline?: string | null
+          owner_id?: string
+          settings?: Json
+          status?: Database["public"]["Enums"]["project_status"]
+          synopsis?: string | null
+          title?: string
+          tone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seasons: {
+        Row: {
+          created_at: string
+          id: string
+          number: number
+          owner_id: string
+          project_id: string
+          summary: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          number?: number
+          owner_id: string
+          project_id: string
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          number?: number
+          owner_id?: string
+          project_id?: string
+          summary?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seasons_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "member"
+      aspect_format: "vertical_9_16" | "horizontal_16_9"
+      project_status: "draft" | "in_production" | "completed" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +357,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "member"],
+      aspect_format: ["vertical_9_16", "horizontal_16_9"],
+      project_status: ["draft", "in_production", "completed", "archived"],
+    },
   },
 } as const
