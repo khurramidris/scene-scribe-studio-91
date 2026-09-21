@@ -7,10 +7,11 @@ const SIZES: Record<ImageRequest["aspect"], string> = {
   landscape: "1536x1024",
 };
 
-/** Adapter for an OpenAI-compatible `/images/generations` endpoint. */
+/** Adapter for an OpenAI-compatible images endpoint (generations + edits). */
 class GatewayImageProvider implements ImageProvider {
   readonly name = "ai-gateway";
   readonly isMock = false;
+  readonly supportsReferenceImages = true;
 
   constructor(
     private readonly apiKey: string,
@@ -19,20 +20,10 @@ class GatewayImageProvider implements ImageProvider {
   ) {}
 
   async generate(request: ImageRequest): Promise<ImageResult> {
-    const res = await fetch(`${this.baseUrl}/images/generations`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": this.apiKey,
-        Authorization: `Bearer ${this.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: this.model,
-        prompt: request.prompt,
-        size: SIZES[request.aspect],
-        n: 1,
-      }),
-    });
+    const references = request.references ?? [];
+    const res = references.length
+      ? await this.edit(request, references)
+      : await this.create(request);
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
@@ -47,26 +38,65 @@ class GatewayImageProvider implements ImageProvider {
 
     const json = (await res.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
     const first = json.data?.[0];
-    if (first?.b64_json) {
-      return {
-        base64: first.b64_json,
-        contentType: "image/png",
-        provider: this.name,
-        model: this.model,
-        isMock: false,
-      };
-    }
+    const base = {
+      contentType: "image/png",
+      provider: this.name,
+      model: this.model,
+      isMock: false,
+      usedReferenceConditioning: references.length > 0,
+    };
+    if (first?.b64_json) return { base64: first.b64_json, ...base };
     if (first?.url) {
       const bytes = new Uint8Array(await (await fetch(first.url)).arrayBuffer());
-      return {
-        base64: toBase64(bytes),
-        contentType: "image/png",
-        provider: this.name,
-        model: this.model,
-        isMock: false,
-      };
+      return { base64: toBase64(bytes), ...base };
     }
     throw new AiProviderError("The image service returned no image.", 502);
+  }
+
+  private create(request: ImageRequest): Promise<Response> {
+    return fetch(`${this.baseUrl}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": this.apiKey,
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        prompt: request.prompt,
+        size: SIZES[request.aspect],
+        n: 1,
+      }),
+    });
+  }
+
+  /** Reference conditioning: the approved images are sent as real inputs. */
+  private edit(
+    request: ImageRequest,
+    references: NonNullable<ImageRequest["references"]>,
+  ): Promise<Response> {
+    const form = new FormData();
+    form.append("model", this.model);
+    form.append("prompt", request.prompt);
+    form.append("size", SIZES[request.aspect]);
+    form.append("n", "1");
+    references.forEach((reference, index) => {
+      const bytes = Uint8Array.from(atob(reference.base64), (c) => c.charCodeAt(0));
+      const ext = reference.mimeType === "image/jpeg" ? "jpg" : "png";
+      form.append(
+        "image[]",
+        new Blob([bytes as unknown as BlobPart], { type: reference.mimeType }),
+        `reference-${index}.${ext}`,
+      );
+    });
+    return fetch(`${this.baseUrl}/images/edits`, {
+      method: "POST",
+      headers: {
+        "Lovable-API-Key": this.apiKey,
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: form,
+    });
   }
 }
 
@@ -80,6 +110,7 @@ function toBase64(bytes: Uint8Array): string {
 class MockImageProvider implements ImageProvider {
   readonly name = "mock";
   readonly isMock = true;
+  readonly supportsReferenceImages = false;
 
   async generate(request: ImageRequest): Promise<ImageResult> {
     const [w, h] = SIZES[request.aspect].split("x").map(Number);
@@ -90,6 +121,7 @@ class MockImageProvider implements ImageProvider {
       provider: this.name,
       model: "mock",
       isMock: true,
+      usedReferenceConditioning: false,
     };
   }
 }
