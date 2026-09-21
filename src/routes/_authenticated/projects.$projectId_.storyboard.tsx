@@ -62,6 +62,19 @@ import {
 import { projectScenesQuery, shotsQuery } from "@/modules/screenplay/screenplay.queries";
 import type { Shot } from "@/modules/screenplay/screenplay.types";
 
+type SubmitVars = {
+  shotId: string;
+  frameId?: string | null;
+  endFrameId?: string | null;
+  mode: "text_to_video" | "image_to_video" | "first_last_frame";
+  resolution: string;
+  durationSeconds: number;
+  negativePrompt?: string;
+  seed?: number;
+  extraPrompt?: string;
+  idempotencyKey: string;
+};
+
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/storyboard")({
   head: () => ({
     meta: [
@@ -228,7 +241,7 @@ function StoryboardStudio() {
   });
 
   const submitMutation = useMutation({
-    mutationFn: (vars: Parameters<typeof submitShotVideo>[0]["data"]) => runSubmit({ data: vars }),
+    mutationFn: (vars: SubmitVars) => runSubmit({ data: vars }),
     onSuccess: (res) => {
       toast.success(res.isMock ? "Placeholder render queued (no video provider)" : "Render queued");
       invalidate();
@@ -429,7 +442,7 @@ function ShotBoard(props: {
   onReject: (frameId: string) => void;
   onDelete: (frame: StoryboardFrame) => void;
   onZoom: (url: string) => void;
-  onSubmit: (vars: Parameters<typeof submitShotVideo>[0]["data"]) => void;
+  onSubmit: (vars: SubmitVars) => void;
   onApprove: (takeId: string) => void;
   onCancel: (jobId: string) => void;
 }) {
