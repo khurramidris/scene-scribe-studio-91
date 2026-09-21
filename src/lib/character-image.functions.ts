@@ -62,7 +62,8 @@ export const generateCharacterImages = createServerFn({ method: "POST" })
         .upload(path, bytes, { contentType: image.contentType, upsert: false });
       if (uploadError) throw new Error(`Could not store the image: ${uploadError.message}`);
 
-      const { data: publicUrl } = supabaseAdmin.storage.from(BUCKET).getPublicUrl(path);
+      // The bucket is private; browsers read images through short-lived signed
+      // URLs issued by `signReferenceUrls` below.
 
       const { data: row, error } = await supabase
         .from("character_references")
