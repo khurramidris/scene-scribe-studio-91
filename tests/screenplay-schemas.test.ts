@@ -44,7 +44,9 @@ describe("screenplay contracts", () => {
   });
 
   it("rejects a screenplay with no scenes", () => {
-    expect(screenplaySchema.safeParse({ title: "x", logline: "y", scenes: [] }).success).toBe(false);
+    expect(screenplaySchema.safeParse({ title: "x", logline: "y", scenes: [] }).success).toBe(
+      false,
+    );
   });
 
   it("rejects an invalid setting value", () => {

@@ -81,7 +81,7 @@ export const screenplaySchema = z.object({
 /** Single-scene regeneration reuses the same scene contract. */
 export const singleSceneJsonSchema = strictObject({
   scene: (screenplayJsonSchema as never as { properties: Record<string, { items: unknown }> })
-    .properties['scenes']!.items,
+    .properties["scenes"]!.items,
 });
 export const singleSceneSchema = z.object({ scene: sceneSchema });
 

@@ -191,11 +191,7 @@ function ScenesWorkspace() {
         {!screenplay ? (
           <p className="mt-6 text-sm text-muted-foreground">
             Write a screenplay for this episode in the{" "}
-            <Link
-              to="/projects/$projectId/screenplay"
-              params={{ projectId }}
-              className="underline"
-            >
+            <Link to="/projects/$projectId/screenplay" params={{ projectId }} className="underline">
               Screenplay studio
             </Link>{" "}
             first.
@@ -343,8 +339,14 @@ function SceneDetail({
         atmosphere: form.atmosphere || null,
         lighting: form.lighting || null,
         estimated_duration_seconds: Math.max(1, Number(form.duration) || 20),
-        props: form.props.split("\n").map((s) => s.trim()).filter(Boolean),
-        wardrobe: form.wardrobe.split("\n").map((s) => s.trim()).filter(Boolean),
+        props: form.props
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        wardrobe: form.wardrobe
+          .split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean),
       });
       onChanged();
       toast.success("Scene saved.");
@@ -444,7 +446,11 @@ function SceneDetail({
                   return;
                 }
                 const match = locations.find((l) => l.id === value);
-                setForm({ ...form, locationId: value, locationName: match?.name ?? form.locationName });
+                setForm({
+                  ...form,
+                  locationId: value,
+                  locationName: match?.name ?? form.locationName,
+                });
               }}
             >
               <SelectTrigger>
