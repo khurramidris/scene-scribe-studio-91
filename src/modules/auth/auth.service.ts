@@ -30,11 +30,12 @@ export async function signInWithGoogle(): Promise<{ error: string | null; redire
   const result = await lovable.auth.signInWithOAuth("google", {
     redirect_uri: window.location.origin,
   });
-  if (result.error) {
+  const rawError: unknown = result.error;
+  if (rawError) {
     const message =
-      typeof result.error === "string"
-        ? result.error
-        : ((result.error as { message?: string }).message ?? "Google sign-in failed");
+      typeof rawError === "string"
+        ? rawError
+        : ((rawError as { message?: string }).message ?? "Google sign-in failed");
     return { error: message, redirected: false };
   }
   return { error: null, redirected: Boolean(result.redirected) };
