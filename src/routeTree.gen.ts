@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
+import { Route as AuthenticatedProjectsProjectIdCharactersRouteImport } from './routes/_authenticated/projects.$projectId_.characters'
 import { Route as AuthenticatedProjectsProjectIdStoryRouteImport } from './routes/_authenticated/projects.$projectId_.story'
 
 const IndexRoute = IndexRouteImport.update({
@@ -41,6 +42,12 @@ const AuthenticatedProjectsProjectIdRoute =
     path: '/projects/$projectId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsProjectIdCharactersRoute =
+  AuthenticatedProjectsProjectIdCharactersRouteImport.update({
+    id: '/projects/$projectId_/characters',
+    path: '/projects/$projectId/characters',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdStoryRoute =
   AuthenticatedProjectsProjectIdStoryRouteImport.update({
     id: '/projects/$projectId_/story',
@@ -53,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +68,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRoutesById {
@@ -69,6 +78,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
+  '/_authenticated/projects/$projectId_/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/_authenticated/projects/$projectId_/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRouteTypes {
@@ -78,6 +88,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/projects/$projectId'
+    | '/projects/$projectId/characters'
     | '/projects/$projectId/story'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -85,6 +96,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/dashboard'
     | '/projects/$projectId'
+    | '/projects/$projectId/characters'
     | '/projects/$projectId/story'
   id:
     | '__root__'
@@ -93,6 +105,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/projects/$projectId'
+    | '/_authenticated/projects/$projectId_/characters'
     | '/_authenticated/projects/$projectId_/story'
   fileRoutesById: FileRoutesById
 }
@@ -139,6 +152,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/$projectId_/characters': {
+      id: '/_authenticated/projects/$projectId_/characters'
+      path: '/projects/$projectId/characters'
+      fullPath: '/projects/$projectId/characters'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdCharactersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$projectId_/story': {
       id: '/_authenticated/projects/$projectId_/story'
       path: '/projects/$projectId/story'
@@ -152,12 +172,15 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
+  AuthenticatedProjectsProjectIdCharactersRoute: typeof AuthenticatedProjectsProjectIdCharactersRoute
   AuthenticatedProjectsProjectIdStoryRoute: typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
+  AuthenticatedProjectsProjectIdCharactersRoute:
+    AuthenticatedProjectsProjectIdCharactersRoute,
   AuthenticatedProjectsProjectIdStoryRoute:
     AuthenticatedProjectsProjectIdStoryRoute,
 }
