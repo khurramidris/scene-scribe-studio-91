@@ -7,7 +7,9 @@ const TABS = [
   { to: "/projects/$projectId/screenplay", label: "Screenplay" },
   { to: "/projects/$projectId/scenes", label: "Scenes" },
   { to: "/projects/$projectId/shots", label: "Shot planning" },
+  { to: "/projects/$projectId/storyboard", label: "Storyboard" },
 ] as const;
+
 
 export function ProjectNav({ projectId }: { projectId: string }) {
   return (

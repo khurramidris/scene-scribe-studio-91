@@ -554,93 +554,37 @@ export const generateShots = createServerFn({ method: "POST" })
       throw new Error("The AI returned data that did not match the expected structure. Try again.");
     }
 
-    // Archive then remove only the unapproved shots.
-    const drafts = (existingShots ?? []).filter((s: any) => s.status !== "approved");
-    if (drafts.length) {
-      const { error: revisionError } = await supabase.from("content_revisions").insert(
-        drafts.map((s: any) => ({
-          project_id: scene.project_id,
-          owner_id: userId,
-          entity_type: "shot",
-          entity_id: s.id,
-          content: s as never,
-          note: "Superseded by shot list regeneration",
-        })),
-      );
-      if (revisionError) {
-        throw new Error("The previous shots could not be archived, so nothing was changed.");
-      }
-      await supabase
-        .from("shots")
-        .delete()
-        .in(
-          "id",
-          drafts.map((s: any) => s.id),
-        );
-    }
-
+    // One atomic database call: archive drafts, delete them, keep every
+    // approved shot at its original sequence position with its identifier, and
+    // insert the new drafts around them. Any failure rolls the whole thing back,
+    // so the existing shot list is never left half-replaced.
     const meta = {
       provider: result.provider,
       model: result.model,
       task: "shot_breakdown",
       generated_at: new Date().toISOString(),
+      is_mock: result.isMock,
     };
 
-    const offset = approvedShots.length;
-    const created: any[] = [];
-    for (let index = 0; index < parsed.data.shots.length; index += 1) {
-      const shot = parsed.data.shots[index]! as z.infer<typeof shotSchema>;
-      const { data: row, error: shotError } = await supabase
-        .from("shots")
-        .insert({
-          project_id: scene.project_id,
-          episode_id: scene.episode_id,
-          screenplay_id: scene.screenplay_id,
-          scene_id: scene.id,
-          owner_id: userId,
-          location_id: scene.location_id,
-          shot_number: offset + index + 1,
-          sort_order: offset + index,
-          shot_type: shot.shot_type,
-          framing: shot.framing,
-          camera_angle: shot.camera_angle,
-          camera_movement: shot.camera_movement,
-          duration_seconds: clampShotDuration(shot.duration_seconds),
-          description: shot.description,
-          action: shot.action,
-          dialogue: shot.dialogue,
-          emotional_tone: shot.emotional_tone,
-          lighting: shot.lighting,
-          sound_design: shot.sound_design,
-          props: shot.props,
-          wardrobe: shot.wardrobe,
-          image_prompt: shot.image_prompt,
-          video_prompt: shot.video_prompt,
-          continuity: shot.continuity,
-          source_excerpt: `${scene.heading} — ${shot.action}`.slice(0, 500),
-          is_ai_generated: true,
-          is_mock: result.isMock,
-          generation_metadata: meta,
-        })
-        .select("*")
-        .single();
-      if (shotError) throw new Error(shotError.message);
-      created.push(row);
-      await linkCharactersByName(
-        supabase,
-        "shot_characters",
-        "shot_id",
-        row.id,
-        scene.project_id,
-        userId,
-        shot.characters,
-        characters,
-      );
+    const payload = parsed.data.shots.map((shot) => ({
+      ...shot,
+      duration_seconds: clampShotDuration(shot.duration_seconds),
+    }));
+
+    const { data: shots, error: rpcError } = await supabase.rpc("regenerate_scene_shots", {
+      p_scene_id: scene.id,
+      p_shots: payload as never,
+      p_meta: meta as never,
+    });
+    if (rpcError) {
+      throw new Error(`The shot list could not be rebuilt, so nothing changed: ${rpcError.message}`);
     }
 
     return {
-      created: created.length,
+      created: payload.length,
       keptApproved: approvedShots.length,
+      total: (shots ?? []).length,
       isMock: result.isMock,
     };
   });
+

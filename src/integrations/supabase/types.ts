@@ -375,6 +375,125 @@ export type Database = {
           },
         ]
       }
+      production_jobs: {
+        Row: {
+          attempts: number
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          episode_id: string | null
+          error: Json | null
+          estimated_cost: number | null
+          id: string
+          idempotency_key: string
+          is_mock: boolean
+          job_type: Database["public"]["Enums"]["production_job_type"]
+          model: string
+          owner_id: string
+          progress: number
+          project_id: string
+          provider: string
+          provider_job_id: string | null
+          request: Json
+          result_asset_id: string | null
+          result_kind: string | null
+          scene_id: string | null
+          shot_id: string | null
+          state: Database["public"]["Enums"]["production_job_state"]
+          submitted_at: string | null
+          updated_at: string
+          usage: Json
+        }
+        Insert: {
+          attempts?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          episode_id?: string | null
+          error?: Json | null
+          estimated_cost?: number | null
+          id?: string
+          idempotency_key: string
+          is_mock?: boolean
+          job_type: Database["public"]["Enums"]["production_job_type"]
+          model: string
+          owner_id: string
+          progress?: number
+          project_id: string
+          provider: string
+          provider_job_id?: string | null
+          request?: Json
+          result_asset_id?: string | null
+          result_kind?: string | null
+          scene_id?: string | null
+          shot_id?: string | null
+          state?: Database["public"]["Enums"]["production_job_state"]
+          submitted_at?: string | null
+          updated_at?: string
+          usage?: Json
+        }
+        Update: {
+          attempts?: number
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          episode_id?: string | null
+          error?: Json | null
+          estimated_cost?: number | null
+          id?: string
+          idempotency_key?: string
+          is_mock?: boolean
+          job_type?: Database["public"]["Enums"]["production_job_type"]
+          model?: string
+          owner_id?: string
+          progress?: number
+          project_id?: string
+          provider?: string
+          provider_job_id?: string | null
+          request?: Json
+          result_asset_id?: string | null
+          result_kind?: string | null
+          scene_id?: string | null
+          shot_id?: string | null
+          state?: Database["public"]["Enums"]["production_job_state"]
+          submitted_at?: string | null
+          updated_at?: string
+          usage?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_jobs_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_jobs_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_jobs_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_jobs_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1170,6 +1289,122 @@ export type Database = {
           },
         ]
       }
+      storyboard_frames: {
+        Row: {
+          aspect: string
+          created_at: string
+          episode_id: string
+          file_size_bytes: number | null
+          generation_params: Json
+          height: number | null
+          id: string
+          is_mock: boolean
+          is_selected: boolean
+          job_id: string | null
+          mime_type: string
+          model: string
+          negative_prompt: string | null
+          owner_id: string
+          project_id: string
+          prompt: string
+          provider: string
+          reference_inputs: Json
+          scene_id: string
+          shot_id: string
+          status: Database["public"]["Enums"]["approval_status"]
+          storage_path: string
+          updated_at: string
+          used_reference_conditioning: boolean
+          version: number
+          width: number | null
+        }
+        Insert: {
+          aspect?: string
+          created_at?: string
+          episode_id: string
+          file_size_bytes?: number | null
+          generation_params?: Json
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          is_selected?: boolean
+          job_id?: string | null
+          mime_type?: string
+          model: string
+          negative_prompt?: string | null
+          owner_id: string
+          project_id: string
+          prompt: string
+          provider: string
+          reference_inputs?: Json
+          scene_id: string
+          shot_id: string
+          status?: Database["public"]["Enums"]["approval_status"]
+          storage_path: string
+          updated_at?: string
+          used_reference_conditioning?: boolean
+          version?: number
+          width?: number | null
+        }
+        Update: {
+          aspect?: string
+          created_at?: string
+          episode_id?: string
+          file_size_bytes?: number | null
+          generation_params?: Json
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          is_selected?: boolean
+          job_id?: string | null
+          mime_type?: string
+          model?: string
+          negative_prompt?: string | null
+          owner_id?: string
+          project_id?: string
+          prompt?: string
+          provider?: string
+          reference_inputs?: Json
+          scene_id?: string
+          shot_id?: string
+          status?: Database["public"]["Enums"]["approval_status"]
+          storage_path?: string
+          updated_at?: string
+          used_reference_conditioning?: boolean
+          version?: number
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "storyboard_frames_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboard_frames_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboard_frames_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "storyboard_frames_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1191,6 +1426,138 @@ export type Database = {
         }
         Relationships: []
       }
+      video_takes: {
+        Row: {
+          aspect: string
+          created_at: string
+          duration_seconds: number | null
+          episode_id: string
+          file_size_bytes: number | null
+          height: number | null
+          id: string
+          is_mock: boolean
+          is_selected: boolean
+          job_id: string | null
+          mime_type: string
+          mode: string
+          model: string
+          negative_prompt: string | null
+          owner_id: string
+          project_id: string
+          prompt: string
+          provider: string
+          scene_id: string
+          seed: number | null
+          settings: Json
+          shot_id: string
+          source_frame_id: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          storage_path: string
+          updated_at: string
+          usage: Json
+          version: number
+          width: number | null
+        }
+        Insert: {
+          aspect?: string
+          created_at?: string
+          duration_seconds?: number | null
+          episode_id: string
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          is_selected?: boolean
+          job_id?: string | null
+          mime_type?: string
+          mode?: string
+          model: string
+          negative_prompt?: string | null
+          owner_id: string
+          project_id: string
+          prompt: string
+          provider: string
+          scene_id: string
+          seed?: number | null
+          settings?: Json
+          shot_id: string
+          source_frame_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          storage_path: string
+          updated_at?: string
+          usage?: Json
+          version?: number
+          width?: number | null
+        }
+        Update: {
+          aspect?: string
+          created_at?: string
+          duration_seconds?: number | null
+          episode_id?: string
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          is_selected?: boolean
+          job_id?: string | null
+          mime_type?: string
+          mode?: string
+          model?: string
+          negative_prompt?: string | null
+          owner_id?: string
+          project_id?: string
+          prompt?: string
+          provider?: string
+          scene_id?: string
+          seed?: number | null
+          settings?: Json
+          shot_id?: string
+          source_frame_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          storage_path?: string
+          updated_at?: string
+          usage?: Json
+          version?: number
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_takes_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_takes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_takes_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_takes_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_takes_source_frame_id_fkey"
+            columns: ["source_frame_id"]
+            isOneToOne: false
+            referencedRelation: "storyboard_frames"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1204,6 +1571,60 @@ export type Database = {
         Returns: boolean
       }
       owns_project: { Args: { _project_id: string }; Returns: boolean }
+      regenerate_scene_shots: {
+        Args: { p_meta: Json; p_scene_id: string; p_shots: Json }
+        Returns: {
+          action: string | null
+          audio_asset_url: string | null
+          audio_storage_path: string | null
+          camera_angle: string | null
+          camera_movement: string | null
+          continuity: Json
+          created_at: string
+          description: string | null
+          dialogue: string | null
+          duration_seconds: number
+          emotional_tone: string | null
+          end_frame_storage_path: string | null
+          episode_id: string
+          framing: string | null
+          generation_metadata: Json
+          id: string
+          image_prompt: string | null
+          is_ai_generated: boolean
+          is_mock: boolean
+          lighting: string | null
+          location_id: string | null
+          owner_id: string
+          production_status: Database["public"]["Enums"]["shot_production_status"]
+          project_id: string
+          props: Json
+          render_history: Json
+          scene_id: string
+          screenplay_id: string
+          shot_number: number
+          shot_type: string | null
+          sort_order: number
+          sound_design: string | null
+          source_excerpt: string | null
+          start_frame_storage_path: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          storyboard_frame_url: string | null
+          storyboard_storage_path: string | null
+          updated_at: string
+          video_asset_url: string | null
+          video_job_id: string | null
+          video_prompt: string | null
+          video_storage_path: string | null
+          wardrobe: Json
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "shots"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "member"
@@ -1211,6 +1632,15 @@ export type Database = {
       aspect_format: "vertical_9_16" | "horizontal_16_9"
       character_reference_kind: "appearance" | "costume" | "expression" | "prop"
       outline_scope: "season" | "episode"
+      production_job_state:
+        | "queued"
+        | "submitting"
+        | "processing"
+        | "downloading"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      production_job_type: "storyboard_image" | "shot_video"
       project_status: "draft" | "in_production" | "completed" | "archived"
       scene_setting: "interior" | "exterior" | "other"
       shot_production_status:
@@ -1357,6 +1787,16 @@ export const Constants = {
       aspect_format: ["vertical_9_16", "horizontal_16_9"],
       character_reference_kind: ["appearance", "costume", "expression", "prop"],
       outline_scope: ["season", "episode"],
+      production_job_state: [
+        "queued",
+        "submitting",
+        "processing",
+        "downloading",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      production_job_type: ["storyboard_image", "shot_video"],
       project_status: ["draft", "in_production", "completed", "archived"],
       scene_setting: ["interior", "exterior", "other"],
       shot_production_status: [
