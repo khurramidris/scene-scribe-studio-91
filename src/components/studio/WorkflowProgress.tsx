@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AlertTriangle, Check, Circle } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { charactersQuery } from "@/modules/characters/character.queries";
 import {
