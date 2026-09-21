@@ -31,9 +31,10 @@ describe("AI provider registries", () => {
     const provider = resolveTextProvider();
     const result = await provider.generateStructured({
       schemaName: "concepts",
-      jsonSchema: { type: "object" },
-      instruction: "test",
+      schema: { type: "object", properties: { synopsis: { type: "string" } } },
+      system: "test",
       prompt: "test",
+      language: "en",
     });
     expect(result.isMock).toBe(true);
     expect(JSON.stringify(result.data)).toBeTruthy();
