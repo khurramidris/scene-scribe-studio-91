@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { StudioShell } from "@/components/layout/StudioShell";
 import { ProjectNav } from "@/components/studio/ProjectNav";
 import { SeasonsPanel } from "@/components/studio/SeasonsPanel";
+import { WorkflowProgress } from "@/components/studio/WorkflowProgress";
 import { assignEpisodeToSeason } from "@/modules/projects/season.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
