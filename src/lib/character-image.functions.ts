@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+import type { Database } from "@/integrations/supabase/types";
+
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const Input = z.object({
@@ -50,7 +52,7 @@ export const generateCharacterImages = createServerFn({ method: "POST" })
     const provider = resolveImageProvider();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const created: unknown[] = [];
+    const created: Database["public"]["Tables"]["character_references"]["Row"][] = [];
     for (let i = 0; i < data.count; i += 1) {
       const image = await provider.generate({ prompt, aspect });
       const bytes = Uint8Array.from(atob(image.base64), (c) => c.charCodeAt(0));

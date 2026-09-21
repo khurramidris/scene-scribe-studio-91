@@ -30,6 +30,15 @@ export type CreateProjectInput = {
 export type UpdateProjectInput = Partial<
   Pick<
     Project,
-    "title" | "logline" | "synopsis" | "genre" | "tone" | "format" | "status" | "language"
+    | "title"
+    | "logline"
+    | "synopsis"
+    | "genre"
+    | "tone"
+    | "format"
+    | "status"
+    | "language"
+    | "premise"
+    | "target_audience"
   >
 >;

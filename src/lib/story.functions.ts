@@ -67,8 +67,10 @@ export const generateStory = createServerFn({ method: "POST" })
       project.synopsis ? `Existing synopsis: ${project.synopsis}` : null,
       bible?.world ? `Approved world: ${bible.world}` : null,
       bible?.central_conflict ? `Approved central conflict: ${bible.central_conflict}` : null,
-      bible?.themes?.length ? `Approved themes: ${JSON.stringify(bible.themes)}` : null,
-      bible?.narrative_rules?.length
+      Array.isArray(bible?.themes) && bible.themes.length
+        ? `Approved themes: ${JSON.stringify(bible.themes)}`
+        : null,
+      Array.isArray(bible?.narrative_rules) && bible.narrative_rules.length
         ? `Approved narrative rules: ${JSON.stringify(bible.narrative_rules)}`
         : null,
       approved?.length
@@ -156,7 +158,7 @@ export const generateStory = createServerFn({ method: "POST" })
           owner_id: userId,
           entity_type: "story_bible",
           entity_id: bible.id,
-          content: bible as unknown as Record<string, unknown>,
+          content: bible as never,
           note: "Superseded by AI regeneration",
         });
       }
@@ -208,8 +210,8 @@ export const generateStory = createServerFn({ method: "POST" })
     const value = parsed.data as {
       characters: Array<Record<string, string>>;
     };
-    const existing = new Set((characters ?? []).map((c) => c.name.toLowerCase()));
-    const fresh = value.characters.filter((c) => !existing.has(c.name.toLowerCase()));
+    const existing = new Set((characters ?? []).map((c) => String(c.name).toLowerCase()));
+    const fresh = value.characters.filter((c) => !existing.has(String(c['name'] ?? '').toLowerCase()));
     if (fresh.length === 0) {
       return { kind: "characters" as const, rows: [], isMock: result.isMock };
     }
