@@ -34,7 +34,12 @@ import {
 } from "@/modules/story/story.service";
 import { LANGUAGES } from "@/modules/story/story.schemas";
 import type { StoryTask } from "@/modules/story/story.schemas";
-import { readBeats, readStringList, type StoryArtifact } from "@/modules/story/story.types";
+import {
+  readBeats,
+  readStringList,
+  type StoryArtifact,
+  type StoryBible,
+} from "@/modules/story/story.types";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/story")({
   head: () => ({
@@ -531,9 +536,7 @@ function BibleEditor({
   bible,
   projectId,
 }: {
-  bible: NonNullable<ReturnType<typeof useQuery<never>>["data"]> extends never
-    ? never
-    : import("@/modules/story/story.types").StoryBible;
+  bible: StoryBible;
   projectId: string;
 }) {
   const queryClient = useQueryClient();
