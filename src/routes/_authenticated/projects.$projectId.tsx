@@ -128,6 +128,7 @@ function ProjectDetail() {
         Productions
       </Link>
       <ProjectNav projectId={projectId} />
+      <WorkflowProgress projectId={projectId} />
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
