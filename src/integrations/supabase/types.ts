@@ -316,6 +316,65 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          atmosphere: string | null
+          created_at: string
+          description: string | null
+          generation_metadata: Json
+          id: string
+          name: string
+          owner_id: string
+          project_id: string
+          reference_image_url: string | null
+          reference_prompt: string | null
+          reference_storage_path: string | null
+          setting: Database["public"]["Enums"]["scene_setting"]
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        Insert: {
+          atmosphere?: string | null
+          created_at?: string
+          description?: string | null
+          generation_metadata?: Json
+          id?: string
+          name: string
+          owner_id: string
+          project_id: string
+          reference_image_url?: string | null
+          reference_prompt?: string | null
+          reference_storage_path?: string | null
+          setting?: Database["public"]["Enums"]["scene_setting"]
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Update: {
+          atmosphere?: string | null
+          created_at?: string
+          description?: string | null
+          generation_metadata?: Json
+          id?: string
+          name?: string
+          owner_id?: string
+          project_id?: string
+          reference_image_url?: string | null
+          reference_prompt?: string | null
+          reference_storage_path?: string | null
+          setting?: Database["public"]["Enums"]["scene_setting"]
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -400,6 +459,249 @@ export type Database = {
         }
         Relationships: []
       }
+      scene_characters: {
+        Row: {
+          character_id: string
+          created_at: string
+          id: string
+          note: string | null
+          owner_id: string
+          project_id: string
+          scene_id: string
+        }
+        Insert: {
+          character_id: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id: string
+          project_id: string
+          scene_id: string
+        }
+        Update: {
+          character_id?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id?: string
+          project_id?: string
+          scene_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scene_characters_character_fkey"
+            columns: ["character_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "scene_characters_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "scene_characters_scene_fkey"
+            columns: ["scene_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id", "project_id"]
+          },
+        ]
+      }
+      scenes: {
+        Row: {
+          action: string | null
+          atmosphere: string | null
+          created_at: string
+          dialogue: Json
+          episode_id: string
+          estimated_duration_seconds: number
+          generation_metadata: Json
+          heading: string
+          id: string
+          is_ai_generated: boolean
+          is_mock: boolean
+          lighting: string | null
+          location_id: string | null
+          location_name: string | null
+          objective: string | null
+          owner_id: string
+          project_id: string
+          props: Json
+          scene_number: number
+          screenplay_id: string
+          setting: Database["public"]["Enums"]["scene_setting"]
+          sort_order: number
+          status: Database["public"]["Enums"]["approval_status"]
+          time_of_day: string | null
+          updated_at: string
+          wardrobe: Json
+        }
+        Insert: {
+          action?: string | null
+          atmosphere?: string | null
+          created_at?: string
+          dialogue?: Json
+          episode_id: string
+          estimated_duration_seconds?: number
+          generation_metadata?: Json
+          heading?: string
+          id?: string
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          lighting?: string | null
+          location_id?: string | null
+          location_name?: string | null
+          objective?: string | null
+          owner_id: string
+          project_id: string
+          props?: Json
+          scene_number?: number
+          screenplay_id: string
+          setting?: Database["public"]["Enums"]["scene_setting"]
+          sort_order?: number
+          status?: Database["public"]["Enums"]["approval_status"]
+          time_of_day?: string | null
+          updated_at?: string
+          wardrobe?: Json
+        }
+        Update: {
+          action?: string | null
+          atmosphere?: string | null
+          created_at?: string
+          dialogue?: Json
+          episode_id?: string
+          estimated_duration_seconds?: number
+          generation_metadata?: Json
+          heading?: string
+          id?: string
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          lighting?: string | null
+          location_id?: string | null
+          location_name?: string | null
+          objective?: string | null
+          owner_id?: string
+          project_id?: string
+          props?: Json
+          scene_number?: number
+          screenplay_id?: string
+          setting?: Database["public"]["Enums"]["scene_setting"]
+          sort_order?: number
+          status?: Database["public"]["Enums"]["approval_status"]
+          time_of_day?: string | null
+          updated_at?: string
+          wardrobe?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenes_episode_fkey"
+            columns: ["episode_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "scenes_location_fkey"
+            columns: ["location_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "scenes_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "scenes_screenplay_fkey"
+            columns: ["screenplay_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "screenplays"
+            referencedColumns: ["id", "project_id"]
+          },
+        ]
+      }
+      screenplays: {
+        Row: {
+          created_at: string
+          episode_id: string
+          generation_metadata: Json
+          id: string
+          instructions: string | null
+          is_ai_generated: boolean
+          is_mock: boolean
+          language: string
+          logline: string | null
+          owner_id: string
+          project_id: string
+          source_outline_id: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          target_duration_seconds: number
+          title: string | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          episode_id: string
+          generation_metadata?: Json
+          id?: string
+          instructions?: string | null
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          language?: string
+          logline?: string | null
+          owner_id: string
+          project_id: string
+          source_outline_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          target_duration_seconds?: number
+          title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          episode_id?: string
+          generation_metadata?: Json
+          id?: string
+          instructions?: string | null
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          language?: string
+          logline?: string | null
+          owner_id?: string
+          project_id?: string
+          source_outline_id?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          target_duration_seconds?: number
+          title?: string | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screenplays_episode_fkey"
+            columns: ["episode_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "screenplays_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           created_at: string
@@ -438,6 +740,242 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      shot_characters: {
+        Row: {
+          character_id: string
+          character_reference_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          owner_id: string
+          project_id: string
+          shot_id: string
+        }
+        Insert: {
+          character_id: string
+          character_reference_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id: string
+          project_id: string
+          shot_id: string
+        }
+        Update: {
+          character_id?: string
+          character_reference_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          owner_id?: string
+          project_id?: string
+          shot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shot_characters_character_fkey"
+            columns: ["character_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "shot_characters_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "shot_characters_reference_fkey"
+            columns: ["character_reference_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "character_references"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "shot_characters_shot_fkey"
+            columns: ["shot_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id", "project_id"]
+          },
+        ]
+      }
+      shots: {
+        Row: {
+          action: string | null
+          audio_asset_url: string | null
+          audio_storage_path: string | null
+          camera_angle: string | null
+          camera_movement: string | null
+          continuity: Json
+          created_at: string
+          description: string | null
+          dialogue: string | null
+          duration_seconds: number
+          emotional_tone: string | null
+          end_frame_storage_path: string | null
+          episode_id: string
+          framing: string | null
+          generation_metadata: Json
+          id: string
+          image_prompt: string | null
+          is_ai_generated: boolean
+          is_mock: boolean
+          lighting: string | null
+          location_id: string | null
+          owner_id: string
+          production_status: Database["public"]["Enums"]["shot_production_status"]
+          project_id: string
+          props: Json
+          render_history: Json
+          scene_id: string
+          screenplay_id: string
+          shot_number: number
+          shot_type: string | null
+          sort_order: number
+          sound_design: string | null
+          source_excerpt: string | null
+          start_frame_storage_path: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          storyboard_frame_url: string | null
+          storyboard_storage_path: string | null
+          updated_at: string
+          video_asset_url: string | null
+          video_job_id: string | null
+          video_prompt: string | null
+          video_storage_path: string | null
+          wardrobe: Json
+        }
+        Insert: {
+          action?: string | null
+          audio_asset_url?: string | null
+          audio_storage_path?: string | null
+          camera_angle?: string | null
+          camera_movement?: string | null
+          continuity?: Json
+          created_at?: string
+          description?: string | null
+          dialogue?: string | null
+          duration_seconds?: number
+          emotional_tone?: string | null
+          end_frame_storage_path?: string | null
+          episode_id: string
+          framing?: string | null
+          generation_metadata?: Json
+          id?: string
+          image_prompt?: string | null
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          lighting?: string | null
+          location_id?: string | null
+          owner_id: string
+          production_status?: Database["public"]["Enums"]["shot_production_status"]
+          project_id: string
+          props?: Json
+          render_history?: Json
+          scene_id: string
+          screenplay_id: string
+          shot_number?: number
+          shot_type?: string | null
+          sort_order?: number
+          sound_design?: string | null
+          source_excerpt?: string | null
+          start_frame_storage_path?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          storyboard_frame_url?: string | null
+          storyboard_storage_path?: string | null
+          updated_at?: string
+          video_asset_url?: string | null
+          video_job_id?: string | null
+          video_prompt?: string | null
+          video_storage_path?: string | null
+          wardrobe?: Json
+        }
+        Update: {
+          action?: string | null
+          audio_asset_url?: string | null
+          audio_storage_path?: string | null
+          camera_angle?: string | null
+          camera_movement?: string | null
+          continuity?: Json
+          created_at?: string
+          description?: string | null
+          dialogue?: string | null
+          duration_seconds?: number
+          emotional_tone?: string | null
+          end_frame_storage_path?: string | null
+          episode_id?: string
+          framing?: string | null
+          generation_metadata?: Json
+          id?: string
+          image_prompt?: string | null
+          is_ai_generated?: boolean
+          is_mock?: boolean
+          lighting?: string | null
+          location_id?: string | null
+          owner_id?: string
+          production_status?: Database["public"]["Enums"]["shot_production_status"]
+          project_id?: string
+          props?: Json
+          render_history?: Json
+          scene_id?: string
+          screenplay_id?: string
+          shot_number?: number
+          shot_type?: string | null
+          sort_order?: number
+          sound_design?: string | null
+          source_excerpt?: string | null
+          start_frame_storage_path?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          storyboard_frame_url?: string | null
+          storyboard_storage_path?: string | null
+          updated_at?: string
+          video_asset_url?: string | null
+          video_job_id?: string | null
+          video_prompt?: string | null
+          video_storage_path?: string | null
+          wardrobe?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shots_episode_fkey"
+            columns: ["episode_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "shots_location_fkey"
+            columns: ["location_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "shots_project_fkey"
+            columns: ["project_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id", "owner_id"]
+          },
+          {
+            foreignKeyName: "shots_scene_fkey"
+            columns: ["scene_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id", "project_id"]
+          },
+          {
+            foreignKeyName: "shots_screenplay_fkey"
+            columns: ["screenplay_id", "project_id"]
+            isOneToOne: false
+            referencedRelation: "screenplays"
+            referencedColumns: ["id", "project_id"]
           },
         ]
       }
@@ -665,6 +1203,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      owns_project: { Args: { _project_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "member"
@@ -673,6 +1212,13 @@ export type Database = {
       character_reference_kind: "appearance" | "costume" | "expression" | "prop"
       outline_scope: "season" | "episode"
       project_status: "draft" | "in_production" | "completed" | "archived"
+      scene_setting: "interior" | "exterior" | "other"
+      shot_production_status:
+        | "planned"
+        | "queued"
+        | "rendering"
+        | "rendered"
+        | "failed"
       story_artifact_kind:
         | "premise"
         | "logline"
@@ -812,6 +1358,14 @@ export const Constants = {
       character_reference_kind: ["appearance", "costume", "expression", "prop"],
       outline_scope: ["season", "episode"],
       project_status: ["draft", "in_production", "completed", "archived"],
+      scene_setting: ["interior", "exterior", "other"],
+      shot_production_status: [
+        "planned",
+        "queued",
+        "rendering",
+        "rendered",
+        "failed",
+      ],
       story_artifact_kind: [
         "premise",
         "logline",
