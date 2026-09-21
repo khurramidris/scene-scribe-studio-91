@@ -15,6 +15,13 @@
       "when": 1789984126251,
       "tag": "0001_story_and_character_studio",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789986306074,
+      "tag": "0002_screenplay_scenes_shots_and_ownership_hardening",
+      "breakpoints": true
     }
   ]
 }
