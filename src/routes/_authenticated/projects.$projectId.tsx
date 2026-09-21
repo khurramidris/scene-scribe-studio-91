@@ -5,6 +5,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { StudioShell } from "@/components/layout/StudioShell";
+import { ProjectNav } from "@/components/studio/ProjectNav";
+import { SeasonsPanel } from "@/components/studio/SeasonsPanel";
+import { assignEpisodeToSeason } from "@/modules/projects/season.service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +23,7 @@ import {
   episodesQuery,
   projectKeys,
   projectQuery,
+  seasonsQuery,
 } from "@/modules/projects/project.queries";
 import {
   createEpisode,
@@ -57,6 +61,7 @@ function ProjectDetail() {
   const navigate = useNavigate();
   const { data: project, isLoading } = useQuery(projectQuery(projectId));
   const { data: episodes } = useQuery(episodesQuery(projectId));
+  const { data: seasons } = useQuery(seasonsQuery(projectId));
   const [episodeTitle, setEpisodeTitle] = useState("");
 
   const save = useMutation({
@@ -122,6 +127,7 @@ function ProjectDetail() {
         <ArrowLeft className="size-4" />
         Productions
       </Link>
+      <ProjectNav projectId={projectId} />
 
       <div className="mt-4 flex items-start justify-between gap-4">
         <div>
@@ -256,6 +262,27 @@ function ProjectDetail() {
                     <span className="text-muted-foreground">EP{episode.number}</span>{" "}
                     {episode.title}
                   </span>
+                  <select
+                    className="ml-auto mr-2 h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+                    value={episode.season_id ?? ""}
+                    aria-label={`Season for ${episode.title}`}
+                    onChange={(e) => {
+                      void assignEpisodeToSeason(episode.id, e.target.value || null)
+                        .then(() =>
+                          queryClient.invalidateQueries({
+                            queryKey: projectKeys.episodes(projectId),
+                          }),
+                        )
+                        .catch((error: Error) => toast.error(error.message));
+                    }}
+                  >
+                    <option value="">No season</option>
+                    {(seasons ?? []).map((season) => (
+                      <option key={season.id} value={season.id}>
+                        S{season.number} — {season.title ?? "Untitled"}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     className="text-muted-foreground hover:text-destructive"
@@ -271,6 +298,8 @@ function ProjectDetail() {
               ) : null}
             </ul>
           </div>
+
+          <SeasonsPanel projectId={projectId} />
         </div>
       </div>
     </StudioShell>
