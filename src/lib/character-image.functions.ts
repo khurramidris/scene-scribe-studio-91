@@ -74,7 +74,7 @@ export const generateCharacterImages = createServerFn({ method: "POST" })
           kind: data.kind,
           label: data.label ?? null,
           prompt,
-          image_url: publicUrl.publicUrl,
+          image_url: null,
           storage_path: path,
           provider: image.provider,
           is_mock: image.isMock,
@@ -88,4 +88,41 @@ export const generateCharacterImages = createServerFn({ method: "POST" })
     }
 
     return { references: created, isMock: provider.isMock };
+  });
+
+const SignInput = z.object({ paths: z.array(z.string().min(1)).max(60) });
+
+/**
+ * Issues short-lived signed URLs for the caller's own reference images.
+ * Ownership is re-checked against `character_references` under RLS before the
+ * privileged storage client is used.
+ */
+export const signReferenceUrls = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => SignInput.parse(input))
+  .handler(async ({ data, context }) => {
+    if (data.paths.length === 0) return { urls: {} as Record<string, string> };
+
+    const { data: owned, error } = await context.supabase
+      .from("character_references")
+      .select("storage_path")
+      .in("storage_path", data.paths);
+    if (error) throw new Error(error.message);
+
+    const allowed = (owned ?? [])
+      .map((row) => row.storage_path)
+      .filter((path): path is string => typeof path === "string");
+    if (allowed.length === 0) return { urls: {} as Record<string, string> };
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error: signError } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .createSignedUrls(allowed, 60 * 60);
+    if (signError) throw new Error(signError.message);
+
+    const urls: Record<string, string> = {};
+    for (const entry of signed ?? []) {
+      if (entry.path && entry.signedUrl) urls[entry.path] = entry.signedUrl;
+    }
+    return { urls };
   });
