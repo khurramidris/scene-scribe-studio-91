@@ -11,7 +11,7 @@ import { bibleQuery } from "@/modules/story/story.queries";
 
 type StageState = "empty" | "in_progress" | "approved";
 
-const ICONS: Record<StageState, JSX.Element> = {
+const ICONS: Record<StageState, ReactNode> = {
   approved: <Check className="size-4 text-primary" />,
   in_progress: <Circle className="size-4 text-muted-foreground" />,
   empty: <Circle className="size-4 text-muted-foreground/40" />,
