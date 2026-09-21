@@ -13,12 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedProjectsProjectIdCharactersRouteImport } from './routes/_authenticated/projects.$projectId_.characters'
 import { Route as AuthenticatedProjectsProjectIdScenesRouteImport } from './routes/_authenticated/projects.$projectId_.scenes'
 import { Route as AuthenticatedProjectsProjectIdScreenplayRouteImport } from './routes/_authenticated/projects.$projectId_.screenplay'
 import { Route as AuthenticatedProjectsProjectIdShotsRouteImport } from './routes/_authenticated/projects.$projectId_.shots'
 import { Route as AuthenticatedProjectsProjectIdStoryRouteImport } from './routes/_authenticated/projects.$projectId_.story'
+import { Route as AuthenticatedProjectsProjectIdStoryboardRouteImport } from './routes/_authenticated/projects.$projectId_.storyboard'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -37,6 +39,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProjectsProjectIdRoute =
@@ -75,28 +82,38 @@ const AuthenticatedProjectsProjectIdStoryRoute =
     path: '/projects/$projectId/story',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsProjectIdStoryboardRoute =
+  AuthenticatedProjectsProjectIdStoryboardRouteImport.update({
+    id: '/projects/$projectId_/storyboard',
+    path: '/projects/$projectId/storyboard',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/queue': typeof AuthenticatedQueueRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
+  '/projects/$projectId/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/queue': typeof AuthenticatedQueueRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
+  '/projects/$projectId/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,12 +121,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/$projectId_/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/_authenticated/projects/$projectId_/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/_authenticated/projects/$projectId_/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/_authenticated/projects/$projectId_/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/_authenticated/projects/$projectId_/story': typeof AuthenticatedProjectsProjectIdStoryRoute
+  '/_authenticated/projects/$projectId_/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,35 +136,41 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/queue'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
     | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
+    | '/projects/$projectId/storyboard'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/queue'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
     | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
+    | '/projects/$projectId/storyboard'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/queue'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/$projectId_/characters'
     | '/_authenticated/projects/$projectId_/scenes'
     | '/_authenticated/projects/$projectId_/screenplay'
     | '/_authenticated/projects/$projectId_/shots'
     | '/_authenticated/projects/$projectId_/story'
+    | '/_authenticated/projects/$projectId_/storyboard'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/queue': {
+      id: '/_authenticated/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof AuthenticatedQueueRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$projectId': {
@@ -226,21 +258,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdStoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/$projectId_/storyboard': {
+      id: '/_authenticated/projects/$projectId_/storyboard'
+      path: '/projects/$projectId/storyboard'
+      fullPath: '/projects/$projectId/storyboard'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdStoryboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedProjectsProjectIdCharactersRoute: typeof AuthenticatedProjectsProjectIdCharactersRoute
   AuthenticatedProjectsProjectIdScenesRoute: typeof AuthenticatedProjectsProjectIdScenesRoute
   AuthenticatedProjectsProjectIdScreenplayRoute: typeof AuthenticatedProjectsProjectIdScreenplayRoute
   AuthenticatedProjectsProjectIdShotsRoute: typeof AuthenticatedProjectsProjectIdShotsRoute
   AuthenticatedProjectsProjectIdStoryRoute: typeof AuthenticatedProjectsProjectIdStoryRoute
+  AuthenticatedProjectsProjectIdStoryboardRoute: typeof AuthenticatedProjectsProjectIdStoryboardRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedQueueRoute: AuthenticatedQueueRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedProjectsProjectIdCharactersRoute:
     AuthenticatedProjectsProjectIdCharactersRoute,
@@ -252,6 +294,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedProjectsProjectIdShotsRoute,
   AuthenticatedProjectsProjectIdStoryRoute:
     AuthenticatedProjectsProjectIdStoryRoute,
+  AuthenticatedProjectsProjectIdStoryboardRoute:
+    AuthenticatedProjectsProjectIdStoryboardRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
