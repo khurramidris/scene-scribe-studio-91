@@ -16,12 +16,12 @@ export function readDialogue(value: unknown): DialogueLine[] {
   return value.flatMap((entry) => {
     if (!entry || typeof entry !== "object") return [];
     const row = entry as Record<string, unknown>;
-    if (typeof row['character'] !== "string" || typeof row['line'] !== "string") return [];
+    if (typeof row["character"] !== "string" || typeof row["line"] !== "string") return [];
     return [
       {
-        character: row['character'],
-        parenthetical: typeof row['parenthetical'] === "string" ? row['parenthetical'] : "",
-        line: row['line'],
+        character: row["character"],
+        parenthetical: typeof row["parenthetical"] === "string" ? row["parenthetical"] : "",
+        line: row["line"],
       },
     ];
   });

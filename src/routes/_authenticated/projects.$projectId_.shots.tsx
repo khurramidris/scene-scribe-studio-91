@@ -79,7 +79,7 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId_/shots
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: ShotPlanning;
+  component: ShotPlanning,
 });
 
 function ShotPlanning() {
@@ -314,9 +314,7 @@ function ShotPlanning() {
             </div>
           ))}
           {sceneId && !shots?.length ? (
-            <p className="text-sm text-muted-foreground">
-              No shots planned for this scene yet.
-            </p>
+            <p className="text-sm text-muted-foreground">No shots planned for this scene yet.</p>
           ) : null}
         </div>
       </div>

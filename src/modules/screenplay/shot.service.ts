@@ -187,7 +187,11 @@ export async function listShotCharacters(projectId: string) {
   return data ?? [];
 }
 
-export async function addShotCharacter(shot: Shot, characterId: string, referenceId?: string | null) {
+export async function addShotCharacter(
+  shot: Shot,
+  characterId: string,
+  referenceId?: string | null,
+) {
   const ownerId = await requireUserId();
   const { error } = await supabase.from("shot_characters").insert({
     project_id: shot.project_id,

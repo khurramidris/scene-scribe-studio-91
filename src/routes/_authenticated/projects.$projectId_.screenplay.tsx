@@ -252,10 +252,7 @@ function ScreenplayStudio() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => generate.mutate()}
-              disabled={!episodeId || generate.isPending}
-            >
+            <Button onClick={() => generate.mutate()} disabled={!episodeId || generate.isPending}>
               {generate.isPending ? (
                 <RefreshCw className="size-4 animate-spin" />
               ) : (
@@ -520,9 +517,9 @@ function SceneCard({
                       onClick={async () => {
                         try {
                           await updateScene(scene, {
-                            heading: String(content['heading'] ?? scene.heading),
-                            action: String(content['action'] ?? ""),
-                            dialogue: content['dialogue'] ?? [],
+                            heading: String(content["heading"] ?? scene.heading),
+                            action: String(content["action"] ?? ""),
+                            dialogue: content["dialogue"] ?? [],
                           });
                           onChanged();
                           toast.success("Earlier version restored.");
@@ -534,7 +531,7 @@ function SceneCard({
                       Restore
                     </Button>
                   </div>
-                  <p className="mt-1 font-mono">{String(content['heading'] ?? "")}</p>
+                  <p className="mt-1 font-mono">{String(content["heading"] ?? "")}</p>
                 </div>
               );
             })

@@ -17,6 +17,7 @@ import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_au
 import { Route as AuthenticatedProjectsProjectIdCharactersRouteImport } from './routes/_authenticated/projects.$projectId_.characters'
 import { Route as AuthenticatedProjectsProjectIdScenesRouteImport } from './routes/_authenticated/projects.$projectId_.scenes'
 import { Route as AuthenticatedProjectsProjectIdScreenplayRouteImport } from './routes/_authenticated/projects.$projectId_.screenplay'
+import { Route as AuthenticatedProjectsProjectIdShotsRouteImport } from './routes/_authenticated/projects.$projectId_.shots'
 import { Route as AuthenticatedProjectsProjectIdStoryRouteImport } from './routes/_authenticated/projects.$projectId_.story'
 
 const IndexRoute = IndexRouteImport.update({
@@ -62,6 +63,12 @@ const AuthenticatedProjectsProjectIdScreenplayRoute =
     path: '/projects/$projectId/screenplay',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsProjectIdShotsRoute =
+  AuthenticatedProjectsProjectIdShotsRouteImport.update({
+    id: '/projects/$projectId_/shots',
+    path: '/projects/$projectId/shots',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdStoryRoute =
   AuthenticatedProjectsProjectIdStoryRouteImport.update({
     id: '/projects/$projectId_/story',
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
+  '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRoutesByTo {
@@ -87,6 +95,7 @@ export interface FileRoutesByTo {
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
+  '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRoutesById {
@@ -99,6 +108,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$projectId_/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/_authenticated/projects/$projectId_/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/_authenticated/projects/$projectId_/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
+  '/_authenticated/projects/$projectId_/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/_authenticated/projects/$projectId_/story': typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 export interface FileRouteTypes {
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/characters'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
+    | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/projects/$projectId/characters'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
+    | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
   id:
     | '__root__'
@@ -132,6 +144,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$projectId_/characters'
     | '/_authenticated/projects/$projectId_/scenes'
     | '/_authenticated/projects/$projectId_/screenplay'
+    | '/_authenticated/projects/$projectId_/shots'
     | '/_authenticated/projects/$projectId_/story'
   fileRoutesById: FileRoutesById
 }
@@ -199,6 +212,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdScreenplayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/$projectId_/shots': {
+      id: '/_authenticated/projects/$projectId_/shots'
+      path: '/projects/$projectId/shots'
+      fullPath: '/projects/$projectId/shots'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdShotsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$projectId_/story': {
       id: '/_authenticated/projects/$projectId_/story'
       path: '/projects/$projectId/story'
@@ -215,6 +235,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsProjectIdCharactersRoute: typeof AuthenticatedProjectsProjectIdCharactersRoute
   AuthenticatedProjectsProjectIdScenesRoute: typeof AuthenticatedProjectsProjectIdScenesRoute
   AuthenticatedProjectsProjectIdScreenplayRoute: typeof AuthenticatedProjectsProjectIdScreenplayRoute
+  AuthenticatedProjectsProjectIdShotsRoute: typeof AuthenticatedProjectsProjectIdShotsRoute
   AuthenticatedProjectsProjectIdStoryRoute: typeof AuthenticatedProjectsProjectIdStoryRoute
 }
 
@@ -227,6 +248,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedProjectsProjectIdScenesRoute,
   AuthenticatedProjectsProjectIdScreenplayRoute:
     AuthenticatedProjectsProjectIdScreenplayRoute,
+  AuthenticatedProjectsProjectIdShotsRoute:
+    AuthenticatedProjectsProjectIdShotsRoute,
   AuthenticatedProjectsProjectIdStoryRoute:
     AuthenticatedProjectsProjectIdStoryRoute,
 }

@@ -18,7 +18,6 @@ You write producible, performable material with concrete visual action.
 Respect every piece of approved material you are given: never contradict it, build on it.
 Return ONLY data that matches the requested schema.`;
 
-
 /** Shared production brief used by every generation entry point below. */
 async function buildBrief(
   supabase: any,
@@ -38,7 +37,9 @@ async function buildBrief(
       supabase.from("story_bibles").select("*").eq("project_id", projectId).maybeSingle(),
       supabase
         .from("characters")
-        .select("id, name, role, description, personality, motivation, arc, appearance_prompt, status")
+        .select(
+          "id, name, role, description, personality, motivation, arc, appearance_prompt, status",
+        )
         .eq("project_id", projectId),
       supabase
         .from("character_relationships")
@@ -68,14 +69,14 @@ async function buildBrief(
       .lt("episodes.number", episode.number)
       .order("sort_order", { ascending: true })
       .limit(40);
-    previousEvents = (earlier ?? []).map(
-      (s: any) => `- ${s.heading}: ${s.objective ?? ""}`.slice(0, 220),
+    previousEvents = (earlier ?? []).map((s: any) =>
+      `- ${s.heading}: ${s.objective ?? ""}`.slice(0, 220),
     );
   }
 
   const episodeOutline = episodeId
-    ? (outlines ?? []).find((o: any) => o.episode_id === episodeId && o.status === "approved") ??
-      (outlines ?? []).find((o: any) => o.episode_id === episodeId)
+    ? ((outlines ?? []).find((o: any) => o.episode_id === episodeId && o.status === "approved") ??
+      (outlines ?? []).find((o: any) => o.episode_id === episodeId))
     : null;
   const seasonOutline = (outlines ?? []).find(
     (o: any) => o.scope === "season" && o.status === "approved",
@@ -107,12 +108,11 @@ async function buildBrief(
       : null,
     characters?.length
       ? `Cast (use these exact names):\n${characters
-          .map(
-            (c: any) =>
-              `- ${c.name} (${c.role ?? "role tbd"}): ${c.personality ?? ""} Motivation: ${c.motivation ?? ""} Arc: ${c.arc ?? ""}`.slice(
-                0,
-                320,
-              ),
+          .map((c: any) =>
+            `- ${c.name} (${c.role ?? "role tbd"}): ${c.personality ?? ""} Motivation: ${c.motivation ?? ""} Arc: ${c.arc ?? ""}`.slice(
+              0,
+              320,
+            ),
           )
           .join("\n")}`
       : null,
@@ -167,9 +167,7 @@ async function linkCharactersByName(
   cast: any[],
 ): Promise<void> {
   const rows = names
-    .map((name) =>
-      cast.find((c) => String(c.name).toLowerCase() === name.trim().toLowerCase()),
-    )
+    .map((name) => cast.find((c) => String(c.name).toLowerCase() === name.trim().toLowerCase()))
     .filter(Boolean)
     .map((c: any) => ({
       project_id: projectId,
@@ -320,7 +318,11 @@ export const generateScreenplay = createServerFn({ method: "POST" })
       );
     }
 
-    return { screenplayId: screenplay.id as string, sceneCount: scenes.length, isMock: result.isMock };
+    return {
+      screenplayId: screenplay.id as string,
+      sceneCount: scenes.length,
+      isMock: result.isMock,
+    };
   });
 
 /* ------------------------------------------------------------------ */
@@ -642,4 +644,3 @@ export const generateShots = createServerFn({ method: "POST" })
       isMock: result.isMock,
     };
   });
-

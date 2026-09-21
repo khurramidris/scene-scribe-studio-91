@@ -82,7 +82,9 @@ export async function setScreenplayStatus(
 
 export async function updateScreenplay(
   screenplay: Screenplay,
-  patch: Partial<Pick<Screenplay, "title" | "logline" | "instructions" | "target_duration_seconds">>,
+  patch: Partial<
+    Pick<Screenplay, "title" | "logline" | "instructions" | "target_duration_seconds">
+  >,
 ): Promise<Screenplay> {
   await snapshot(screenplay.project_id, "screenplay", screenplay.id, screenplay, "Manual edit");
   const { data, error } = await supabase
@@ -153,10 +155,7 @@ export async function deleteScene(scene: Scene): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function createScene(
-  screenplay: Screenplay,
-  afterSortOrder: number,
-): Promise<Scene> {
+export async function createScene(screenplay: Screenplay, afterSortOrder: number): Promise<Scene> {
   const ownerId = await requireUserId();
   const { data, error } = await supabase
     .from("scenes")
@@ -293,7 +292,12 @@ export async function createLocation(
 
 export async function updateLocation(
   id: string,
-  patch: Partial<Pick<ProductionLocation, "name" | "setting" | "description" | "atmosphere" | "reference_prompt" | "status">>,
+  patch: Partial<
+    Pick<
+      ProductionLocation,
+      "name" | "setting" | "description" | "atmosphere" | "reference_prompt" | "status"
+    >
+  >,
 ): Promise<ProductionLocation> {
   const { data, error } = await supabase
     .from("locations")
