@@ -18,9 +18,6 @@ You write producible, performable material with concrete visual action.
 Respect every piece of approved material you are given: never contradict it, build on it.
 Return ONLY data that matches the requested schema.`;
 
-type Supa = Parameters<Parameters<typeof requireSupabaseAuth.server>[0]>[0] extends never
-  ? never
-  : never;
 
 /** Shared production brief used by every generation entry point below. */
 async function buildBrief(
@@ -380,7 +377,7 @@ export const regenerateScene = createServerFn({ method: "POST" })
       schema: singleSceneJsonSchema,
       system: SYSTEM,
       prompt,
-      language: scene.generation_metadata && typeof scene.generation_metadata === "object" ? "en" : "en",
+      language: sceneLanguage,
     });
 
     const parsed = singleSceneSchema.safeParse(result.data);
@@ -640,4 +637,3 @@ export const generateShots = createServerFn({ method: "POST" })
     };
   });
 
-export type { Supa };
