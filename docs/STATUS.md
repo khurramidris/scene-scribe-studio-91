@@ -1,6 +1,6 @@
 # Status — implemented, verified, and outstanding
 
-Last verified: phase "Ship V1" (episode editor, MP4 export, background job recovery).
+Last verified: final V1 release pass — verified on the hosted application at https://scene-scribe-studio-91.lovable.app
 
 
 ## Implemented and verified end to end
@@ -163,9 +163,58 @@ It was run locally against the dev server for the acceptance test above. It is
 | `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` during rotation) | Authenticates the cron tick and the export worker |
 | `BACKLOT_APP_URL`, `BACKLOT_CRON_SECRET` | Export worker configuration |
 
+## Final release pass — verified on the hosted application
+
+Hosted URL: https://scene-scribe-studio-91.lovable.app
+
+Verified on the hosted site (22 Sep 2026, signed in as the test director
+account, production `435325dc…`, episode `7a1a72cd…`, three real approved
+takes reused — no new paid generations):
+
+| Check | Result |
+| --- | --- |
+| Episode editor loads three real approved takes | Pass |
+| Reorder clip 1 ↔ 2, trim 1s off a clip, Save, reload | Pass — order `2,1,3` and the trim persisted; total 0:08 → 0:07 |
+| Empty timeline persists (remove all clips → Save → reload) | Pass — stays `0 clips`; "Restore approved takes" rebuilds it to 3 |
+| Export queued from the browser, browser then closed | Pass |
+| Export rendered by the worker with no browser open | Pass — export `cf0a67f5…`, one attempt |
+| Download and play the MP4 | Pass — 5,587,936 bytes, h264 1080×1920 @30fps + aac, 7.02s (matches the trimmed timeline), full decode with no errors |
+| Source takes and saved timeline intact afterwards | Pass |
+| Duplicate / stale completion report on a completed export | Rejected, HTTP 409 `stale_attempt` |
+| Stale failure report on a completed export | Rejected, HTTP 409 `stale_attempt`; export stays `completed` |
+| Unauthenticated claim request | Rejected, HTTP 401 |
+
+Release fixes in this pass:
+
+1. **Empty timelines persist** — `getEpisodeTimeline` treats any saved record as
+   authoritative, including `clips: []`; approved takes seed only a timeline
+   that has never been saved. Explicit "Restore approved takes" action added.
+2. **Trim-aware preview** — each clip seeks to `trimInSeconds`, stops at
+   `duration − trimOutSeconds`, advances to the next clip in timeline order,
+   honours mute, stops at the end of the sequence and reports unreadable media
+   instead of hanging.
+3. **Stale-worker protection** — migration `0005` adds `attempt_token`; the
+   claim endpoint issues one per attempt and completion requires it, the export
+   to be in an open state, and the upload to exist at the exact expected path.
+   All state changes are conditional single statements.
+
+Tooling: `bunx tsgo --noEmit` clean, production build OK, `bunx vitest run`
+102 passed / 0 skipped (11 files), including `tests/release-fixes.test.ts`
+covering the three fixes. `bun run lint` still reports pre-existing formatting
+noise unrelated to these changes.
+
 ## Outstanding / not yet built
 
-- Export worker not deployed to a hosted environment (runs on demand today).
+- **Export worker not deployed to a permanent host.** Its code, Dockerfile and
+  README are in `worker/export-worker/`, and it was run against the hosted
+  application to produce the verified export above, but nothing in this
+  environment can host a long-running container. Minimal manual action:
+  `docker build -t backlot-export-worker worker/export-worker` and run it on any
+  container host (Fly.io, Railway, Render, a VM) with `BACKLOT_APP_URL=https://scene-scribe-studio-91.lovable.app`
+  and `BACKLOT_CRON_SECRET` set to the app's `LOVABLE_CRON_SECRET`, restart
+  policy "always". The same process also calls `/api/public/cron/tick`, which is
+  what recovers video jobs while no browser is open — until it is hosted, both
+  export rendering and background video recovery only run while the worker runs.
 - Audio: clip audio is preserved and clips can be muted; no background-music
   upload, AI dubbing, voice cloning or automatic subtitle generation.
   Subtitles are supported by uploading an SRT and burning it in.
