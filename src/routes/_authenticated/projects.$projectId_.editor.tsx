@@ -696,6 +696,12 @@ function EpisodeEditorPage() {
                       {record.error?.message && (
                         <p className="mt-1 text-destructive">{record.error.message}</p>
                       )}
+                      {isStalled(record) && (
+                        <p className="mt-1 text-amber-500">
+                          No render service has picked this up yet. It will start automatically once
+                          the export worker is running.
+                        </p>
+                      )}
                       {record.state === "completed" && (
                         <Button
                           size="sm"
@@ -704,6 +710,17 @@ function EpisodeEditorPage() {
                           onClick={() => downloadMutation.mutate(record.id)}
                         >
                           <Download className="mr-1 h-3.5 w-3.5" /> Download MP4
+                        </Button>
+                      )}
+                      {(record.state === "failed" || record.state === "cancelled") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full"
+                          disabled={dirty || !clips.length || exportMutation.isPending}
+                          onClick={() => exportMutation.mutate()}
+                        >
+                          <RefreshCw className="mr-1 h-3.5 w-3.5" /> Retry export
                         </Button>
                       )}
                     </div>
