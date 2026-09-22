@@ -307,7 +307,7 @@ async function tick() {
     await fetch(`${APP_URL}/api/public/exports/complete`, {
       method: "POST",
       headers: { ...authHeaders, "content-type": "application/json" },
-      body: JSON.stringify({ exportId: job.id, ok: true, ...result }),
+      body: JSON.stringify({ exportId: job.id, attemptToken: job.attemptToken, ok: true, ...result }),
     });
     console.log(`export ${job.id} completed (${result.fileSizeBytes} bytes)`);
   } catch (cause) {
@@ -317,6 +317,7 @@ async function tick() {
       headers: { ...authHeaders, "content-type": "application/json" },
       body: JSON.stringify({
         exportId: job.id,
+        attemptToken: job.attemptToken,
         ok: false,
         error: cause instanceof Error ? cause.message : "Render failed",
       }),

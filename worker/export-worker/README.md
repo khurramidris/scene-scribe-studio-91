@@ -25,13 +25,19 @@ holds database, storage or AI provider credentials.
    }
    ```
 
+   The claim response also carries `attemptToken`, the identifier of this
+   attempt.
+
 2. `PUT <job.upload.url>` with the rendered MP4 body.
 
 3. `POST /api/public/exports/complete`
-   `{ "exportId": "uuid", "ok": true, "storagePath": "...", "fileSizeBytes": 123, "durationSeconds": 15 }`
-   or `{ "exportId": "uuid", "ok": false, "error": "..." }`.
-   The app verifies the uploaded file exists and is non-empty before it marks
-   the export completed.
+   `{ "exportId": "uuid", "attemptToken": "uuid", "ok": true, "storagePath": "...", "fileSizeBytes": 123, "durationSeconds": 15 }`
+   or `{ "exportId": "uuid", "attemptToken": "uuid", "ok": false, "error": "..." }`.
+   The app rejects (HTTP 409) any report whose `attemptToken` is not the
+   currently active attempt, any export that is no longer open, and any
+   `storagePath` other than the one issued with the claim. It verifies the
+   uploaded file exists and is non-empty before it marks the export completed,
+   so a late result from an obsolete worker can never overwrite a newer one.
 
 Exports stuck in `processing`/`uploading` for over 30 minutes are re-queued on
 the next claim; after 3 attempts they are marked failed.
