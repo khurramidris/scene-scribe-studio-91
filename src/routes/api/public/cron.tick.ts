@@ -28,14 +28,14 @@ export const Route = createFileRoute("/api/public/cron/tick")({
         await supabaseAdmin
           .from("production_jobs")
           .update({ state: "processing" })
-          .eq("job_type", "shot_video")
+          .in("job_type", ["shot_video", "single_video"])
           .eq("state", "downloading")
           .lt("updated_at", staleBefore);
 
         const { data: jobs, error } = await supabaseAdmin
           .from("production_jobs")
           .select("*")
-          .eq("job_type", "shot_video")
+          .in("job_type", ["shot_video", "single_video"])
           .in("state", ["submitting", "processing"])
           .order("created_at", { ascending: true })
           .limit(MAX_JOBS_PER_TICK);
