@@ -29,7 +29,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
               Production queue
             </Link>
             {user?.email ? (
-              <span className="hidden font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+              <span className="hidden font-mono text-[11px] text-muted-foreground sm:inline">
                 {user.email}
               </span>
             ) : null}
