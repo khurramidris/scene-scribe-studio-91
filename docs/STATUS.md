@@ -20,7 +20,11 @@ Last verified: phase "Ship V1" (episode editor, MP4 export, background job recov
 | Production jobs + queue | `production_jobs` rows for every image and video generation, idempotency keys, attempt counts, progress, structured errors, cancellation, per-user active-job limit (3); `/queue` page lists every job with provider, model, elapsed time, retry-by-polling, cancel and a link to the shot. |
 | Permanent media storage | Every generated frame and clip is downloaded server-side into the private `storyboard-frames` / `shot-videos` buckets; a failed download leaves the job `failed`, never `completed`. Playback uses short-lived signed URLs. |
 | Workflow overview | Production page shows the approval state of each stage and flags approved scenes that predate the latest story-bible change. |
-| Ownership hardening | Composite keys plus `owns_project()`; migration 0003 fixes optional FKs to column-specific `ON DELETE SET NULL`. |
+| Episode editor | Loads an episode's approved takes as an ordered timeline; reorder, remove, swap take, trim start/end, mute, title card, SRT burn-in, total duration, explicit Save, persisted in `episode_timelines`. |
+| MP4 export | `episode_exports` + standalone FFmpeg worker: normalise, concatenate, title card, subtitle burn-in, upload to the private `episode-exports` bucket, signed download, export history, partial exports allowed. |
+| Background job recovery | `/api/public/cron/tick` advances active video jobs and recovers stale ones; `/api/public/exports/claim` + `/complete` drive the export worker. Both authenticate with the cron secret; no credentials reach the browser. |
+| Ownership hardening | Composite keys plus `owns_project()`; migration 0003 fixes optional FKs to column-specific `ON DELETE SET NULL`; migration 0004 revokes direct browser writes to jobs, takes and frames and adds one-active-render and one-take-per-job unique indexes. |
+
 
 ## Part 1 corrections (this phase)
 
