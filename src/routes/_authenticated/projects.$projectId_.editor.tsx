@@ -172,6 +172,22 @@ function EpisodeEditorPage() {
     setDirty(true);
   }
 
+  /** Plays the next clip in the saved order, or stops at the end of the episode. */
+  function advanceFrom(index: number) {
+    if (index + 1 < clips.length) setPlayingIndex(index + 1);
+    else setPlayingIndex(null);
+  }
+
+  const approvedClips = (timeline.data?.approvedClips ?? []) as Clip[];
+  function restoreApprovedTakes() {
+    if (!approvedClips.length) {
+      toast.error("This episode has no approved takes to restore.");
+      return;
+    }
+    mutateClips(approvedClips.map((clip) => ({ ...clip })));
+    toast.success(`Restored ${approvedClips.length} approved take(s).`);
+  }
+
   const save = useServerFn(saveEpisodeTimeline);
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -273,17 +289,46 @@ function EpisodeEditorPage() {
                 )}
               </div>
 
+                <span className="ml-auto flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!clips.length}
+                    onClick={() => setPlayingIndex(0)}
+                  >
+                    <Play className="mr-1 h-3.5 w-3.5" /> Play episode
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!approvedClips.length}
+                    onClick={restoreApprovedTakes}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" /> Restore approved takes
+                  </Button>
+                </span>
+              </div>
+
               {clips.length === 0 && (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                  No approved takes on this timeline yet.{" "}
-                  <Link
-                    to="/projects/$projectId/storyboard"
-                    params={{ projectId }}
-                    className="text-primary underline"
-                  >
-                    Go to Storyboard Studio
-                  </Link>{" "}
-                  to render and approve shots.
+                  This timeline is empty.{" "}
+                  {approvedClips.length > 0 ? (
+                    <>
+                      Use <span className="font-medium">Restore approved takes</span> to rebuild it
+                      from your {approvedClips.length} approved take(s).
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/projects/$projectId/storyboard"
+                        params={{ projectId }}
+                        className="text-primary underline"
+                      >
+                        Go to Storyboard Studio
+                      </Link>{" "}
+                      to render and approve shots.
+                    </>
+                  )}
                 </div>
               )}
 
