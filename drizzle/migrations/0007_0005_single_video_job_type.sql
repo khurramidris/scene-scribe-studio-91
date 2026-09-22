@@ -1,0 +1,1 @@
+ALTER TYPE production_job_type ADD VALUE IF NOT EXISTS 'single_video';

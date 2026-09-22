@@ -1798,7 +1798,7 @@ export type Database = {
         | "completed"
         | "failed"
         | "cancelled"
-      production_job_type: "storyboard_image" | "shot_video"
+      production_job_type: "storyboard_image" | "shot_video" | "single_video"
       project_status: "draft" | "in_production" | "completed" | "archived"
       scene_setting: "interior" | "exterior" | "other"
       shot_production_status:
@@ -1962,7 +1962,7 @@ export const Constants = {
         "failed",
         "cancelled",
       ],
-      production_job_type: ["storyboard_image", "shot_video"],
+      production_job_type: ["storyboard_image", "shot_video", "single_video"],
       project_status: ["draft", "in_production", "completed", "archived"],
       scene_setting: ["interior", "exterior", "other"],
       shot_production_status: [
