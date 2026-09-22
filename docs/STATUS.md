@@ -1,6 +1,6 @@
 # Status — implemented, verified, and outstanding
 
-Last verified: phase "Ship V1" (episode editor, MP4 export, background job recovery).
+Last verified: final V1 release pass — verified on the hosted application at https://scene-scribe-studio-91.lovable.app
 
 
 ## Implemented and verified end to end
