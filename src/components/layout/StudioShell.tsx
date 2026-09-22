@@ -11,25 +11,27 @@ export function StudioShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link to="/dashboard" className="flex items-center gap-2">
-            <Clapperboard className="size-5 text-primary" />
-            <span className="font-display text-sm font-semibold tracking-tight">
-              Backlot Studio
+    <div className="tech-grid min-h-screen bg-background">
+      <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <Link to="/dashboard" className="flex items-center gap-2.5">
+            <span className="flex size-6 items-center justify-center rounded-sm bg-primary">
+              <Clapperboard className="size-3.5 text-primary-foreground" />
             </span>
+            <span className="font-display text-base font-bold tracking-tight">Backlot Studio</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-5">
             <Link
               to="/queue"
-              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
-              activeProps={{ className: "text-foreground" }}
+              className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"
+              activeProps={{ className: "text-primary" }}
             >
               Production queue
             </Link>
             {user?.email ? (
-              <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
+              <span className="hidden font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground sm:inline">
+                {user.email}
+              </span>
             ) : null}
 
             <Button
@@ -46,7 +48,7 @@ export function StudioShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
     </div>
   );
 }
