@@ -337,8 +337,10 @@ export const selectStoryboardFrame = createServerFn({ method: "POST" })
     return updated;
   });
 
+export const UPLOAD_BUCKET = "user-images";
+
 const SignInput = z.object({
-  bucket: z.enum([STORYBOARD_BUCKET, VIDEO_BUCKET]),
+  bucket: z.enum([STORYBOARD_BUCKET, VIDEO_BUCKET, UPLOAD_BUCKET]),
   paths: z.array(z.string().min(1)).max(80),
 });
 
@@ -348,16 +350,24 @@ export const signStudioUrls = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SignInput.parse(input))
   .handler(async ({ data, context }) => {
     if (!data.paths.length) return { urls: {} as Record<string, string> };
-    const table = data.bucket === STORYBOARD_BUCKET ? "storyboard_frames" : "video_takes";
-    const { data: owned, error } = await (context as Ctx).supabase
-      .from(table)
-      .select("storage_path")
-      .in("storage_path", data.paths);
-    if (error) throw new Error(error.message);
+    const tables =
+      data.bucket === STORYBOARD_BUCKET
+        ? ["storyboard_frames"]
+        : data.bucket === UPLOAD_BUCKET
+          ? ["user_images"]
+          : ["video_takes", "single_videos"];
 
-    const allowed = (owned ?? [])
-      .map((row: any) => row.storage_path)
-      .filter((p: any): p is string => typeof p === "string");
+    const allowed: string[] = [];
+    for (const table of tables) {
+      const { data: owned, error } = await (context as Ctx).supabase
+        .from(table)
+        .select("storage_path")
+        .in("storage_path", data.paths);
+      if (error) throw new Error(error.message);
+      for (const row of owned ?? []) {
+        if (typeof (row as any).storage_path === "string") allowed.push((row as any).storage_path);
+      }
+    }
     if (!allowed.length) return { urls: {} as Record<string, string> };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
