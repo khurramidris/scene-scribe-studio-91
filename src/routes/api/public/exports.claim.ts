@@ -40,11 +40,14 @@ export const Route = createFileRoute("/api/public/exports/claim")({
         if (!queued) return Response.json({ ok: true, job: null });
 
         // Single-flight claim: only the caller that flips queued -> processing wins.
+        // The fresh attempt token makes every later result traceable to this attempt.
+        const attemptToken = crypto.randomUUID();
         const { data: claimed } = await supabaseAdmin
           .from("episode_exports")
           .update({
             state: "processing",
             claimed_at: new Date().toISOString(),
+            attempt_token: attemptToken,
             attempts: (queued.attempts ?? 0) + 1,
           })
           .eq("id", queued.id)
@@ -114,6 +117,7 @@ export const Route = createFileRoute("/api/public/exports/claim")({
           ok: true,
           job: {
             id: claimed.id,
+            attemptToken,
             width: claimed.width,
             height: claimed.height,
             fps: claimed.fps,

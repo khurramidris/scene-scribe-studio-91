@@ -85,6 +85,17 @@ function clipLength(clip: Clip): number {
   return Math.max(0, clip.durationSeconds - clip.trimInSeconds - clip.trimOutSeconds);
 }
 
+/** An export nobody has picked up for a while, so the user is not left guessing. */
+export function isStalled(record: {
+  state: string;
+  created_at: string;
+  updated_at?: string | null;
+}): boolean {
+  if (record.state !== "queued" && record.state !== "processing") return false;
+  const since = new Date(record.updated_at ?? record.created_at).getTime();
+  return Date.now() - since > 5 * 60 * 1000;
+}
+
 function formatDuration(seconds: number): string {
   const total = Math.round(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -170,6 +181,22 @@ function EpisodeEditorPage() {
   function mutateClips(next: Clip[]) {
     setClips(next.map((clip, index) => ({ ...clip, order: index })));
     setDirty(true);
+  }
+
+  /** Plays the next clip in the saved order, or stops at the end of the episode. */
+  function advanceFrom(index: number) {
+    if (index + 1 < clips.length) setPlayingIndex(index + 1);
+    else setPlayingIndex(null);
+  }
+
+  const approvedClips = (timeline.data?.approvedClips ?? []) as Clip[];
+  function restoreApprovedTakes() {
+    if (!approvedClips.length) {
+      toast.error("This episode has no approved takes to restore.");
+      return;
+    }
+    mutateClips(approvedClips.map((clip) => ({ ...clip })));
+    toast.success(`Restored ${approvedClips.length} approved take(s).`);
   }
 
   const save = useServerFn(saveEpisodeTimeline);
@@ -271,19 +298,46 @@ function EpisodeEditorPage() {
                     {missingShots.length} shot(s) without an approved take
                   </span>
                 )}
+                <span className="ml-auto flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!clips.length}
+                    onClick={() => setPlayingIndex(0)}
+                  >
+                    <Play className="mr-1 h-3.5 w-3.5" /> Play episode
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!approvedClips.length}
+                    onClick={restoreApprovedTakes}
+                  >
+                    <RefreshCw className="mr-1 h-3.5 w-3.5" /> Restore approved takes
+                  </Button>
+                </span>
               </div>
 
               {clips.length === 0 && (
                 <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                  No approved takes on this timeline yet.{" "}
-                  <Link
-                    to="/projects/$projectId/storyboard"
-                    params={{ projectId }}
-                    className="text-primary underline"
-                  >
-                    Go to Storyboard Studio
-                  </Link>{" "}
-                  to render and approve shots.
+                  This timeline is empty.{" "}
+                  {approvedClips.length > 0 ? (
+                    <>
+                      Use <span className="font-medium">Restore approved takes</span> to rebuild it
+                      from your {approvedClips.length} approved take(s).
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        to="/projects/$projectId/storyboard"
+                        params={{ projectId }}
+                        className="text-primary underline"
+                      >
+                        Go to Storyboard Studio
+                      </Link>{" "}
+                      to render and approve shots.
+                    </>
+                  )}
                 </div>
               )}
 
@@ -455,15 +509,40 @@ function EpisodeEditorPage() {
 
                         {playingIndex === index && url && (
                           <video
+                            key={`${clip.takeId}-${clip.trimInSeconds}-${clip.trimOutSeconds}`}
                             ref={videoRef}
                             src={url}
                             controls
                             autoPlay
                             muted={clip.muted}
                             className="mt-3 max-h-80 w-full rounded-md bg-black"
-                            onEnded={() => {
-                              if (index + 1 < clips.length) setPlayingIndex(index + 1);
-                              else setPlayingIndex(null);
+                            onLoadedMetadata={(event) => {
+                              // Start where the user trimmed, not at the source start.
+                              const video = event.currentTarget;
+                              const start = Math.min(
+                                clip.trimInSeconds,
+                                Math.max(0, (video.duration || clip.durationSeconds) - 0.05),
+                              );
+                              if (start > 0) video.currentTime = start;
+                            }}
+                            onTimeUpdate={(event) => {
+                              const video = event.currentTarget;
+                              const source = video.duration || clip.durationSeconds;
+                              const end = Math.max(
+                                clip.trimInSeconds,
+                                source - clip.trimOutSeconds,
+                              );
+                              if (video.currentTime >= end - 0.03) {
+                                video.pause();
+                                advanceFrom(index);
+                              }
+                            }}
+                            onEnded={() => advanceFrom(index)}
+                            onError={() => {
+                              setPlayingIndex(null);
+                              toast.error(
+                                "This clip could not be played. Refresh the page to renew its media link.",
+                              );
                             }}
                           />
                         )}
@@ -628,6 +707,12 @@ function EpisodeEditorPage() {
                       {record.error?.message && (
                         <p className="mt-1 text-destructive">{record.error.message}</p>
                       )}
+                      {isStalled(record) && (
+                        <p className="mt-1 text-amber-500">
+                          No render service has picked this up yet. It will start automatically once
+                          the export worker is running.
+                        </p>
+                      )}
                       {record.state === "completed" && (
                         <Button
                           size="sm"
@@ -636,6 +721,17 @@ function EpisodeEditorPage() {
                           onClick={() => downloadMutation.mutate(record.id)}
                         >
                           <Download className="mr-1 h-3.5 w-3.5" /> Download MP4
+                        </Button>
+                      )}
+                      {(record.state === "failed" || record.state === "cancelled") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-2 w-full"
+                          disabled={dirty || !clips.length || exportMutation.isPending}
+                          onClick={() => exportMutation.mutate()}
+                        >
+                          <RefreshCw className="mr-1 h-3.5 w-3.5" /> Retry export
                         </Button>
                       )}
                     </div>

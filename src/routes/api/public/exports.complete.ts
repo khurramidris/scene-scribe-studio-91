@@ -6,6 +6,7 @@ import { EXPORT_BUCKET } from "@/lib/timeline.functions";
 
 const Body = z.object({
   exportId: z.string().uuid(),
+  attemptToken: z.string().uuid(),
   ok: z.boolean(),
   storagePath: z.string().max(500).optional(),
   fileSizeBytes: z.number().int().nonnegative().optional(),
@@ -13,7 +14,25 @@ const Body = z.object({
   error: z.string().max(2000).optional(),
 });
 
-/** The render worker reports the outcome of one export here. */
+/** States from which an export attempt may still be finalised. */
+const OPEN_STATES = ["processing", "uploading"] as const;
+
+export function expectedExportPath(record: {
+  owner_id: string;
+  project_id: string;
+  episode_id: string;
+  id: string;
+}): string {
+  return `${record.owner_id}/${record.project_id}/${record.episode_id}/${record.id}.mp4`;
+}
+
+/**
+ * The render worker reports the outcome of one export attempt here.
+ *
+ * A result is only accepted when it carries the token issued to the attempt
+ * that currently owns the export, so a late report from an obsolete worker can
+ * never overwrite a newer attempt or an already completed export.
+ */
 export const Route = createFileRoute("/api/public/exports/complete")({
   server: {
     handlers: {
@@ -30,16 +49,47 @@ export const Route = createFileRoute("/api/public/exports/complete")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        if (!body.ok || !body.storagePath) {
-          await supabaseAdmin
-            .from("episode_exports")
-            .update({
+        const { data: record, error: readError } = await supabaseAdmin
+          .from("episode_exports")
+          .select("id, owner_id, project_id, episode_id, state, attempt_token")
+          .eq("id", body.exportId)
+          .maybeSingle();
+        if (readError) return Response.json({ ok: false, error: readError.message }, { status: 500 });
+        if (!record) return Response.json({ ok: false, error: "Export not found" }, { status: 404 });
+
+        if (record.attempt_token !== body.attemptToken) {
+          return Response.json({ ok: false, error: "stale_attempt" }, { status: 409 });
+        }
+        if (!OPEN_STATES.includes(record.state as (typeof OPEN_STATES)[number])) {
+          return Response.json({ ok: false, error: "export_not_open" }, { status: 409 });
+        }
+
+        // Every write is conditional on the attempt still being the active one.
+        const guard = (query: any) =>
+          query
+            .eq("id", body.exportId)
+            .eq("attempt_token", body.attemptToken)
+            .in("state", OPEN_STATES as unknown as string[]);
+
+        const fail = async (message: string) => {
+          await guard(
+            supabaseAdmin.from("episode_exports").update({
               state: "failed",
-              error: { message: body.error ?? "The render worker reported a failure." },
+              error: { message },
               completed_at: new Date().toISOString(),
-            })
-            .eq("id", body.exportId);
+            }),
+          );
           return Response.json({ ok: true });
+        };
+
+        if (!body.ok || !body.storagePath) {
+          return fail(body.error ?? "The render worker reported a failure.");
+        }
+
+        // The worker may only write to the path this export was given.
+        const expected = expectedExportPath(record);
+        if (body.storagePath !== expected) {
+          return fail("The render worker reported an unexpected storage location.");
         }
 
         // Only mark completed once the file really exists in our own storage.
@@ -47,30 +97,28 @@ export const Route = createFileRoute("/api/public/exports/complete")({
           .from(EXPORT_BUCKET)
           .download(body.storagePath);
         if (statError || !file || file.size === 0) {
-          await supabaseAdmin
-            .from("episode_exports")
-            .update({
-              state: "failed",
-              error: { message: "The exported file could not be verified in storage." },
-              completed_at: new Date().toISOString(),
-            })
-            .eq("id", body.exportId);
-          return Response.json({ ok: true });
+          return fail("The exported file could not be verified in storage.");
         }
 
-        const { error } = await supabaseAdmin
-          .from("episode_exports")
-          .update({
-            state: "completed",
-            storage_path: body.storagePath,
-            mime_type: "video/mp4",
-            file_size_bytes: body.fileSizeBytes ?? file.size,
-            duration_seconds: body.durationSeconds ?? null,
-            error: null,
-            completed_at: new Date().toISOString(),
-          })
-          .eq("id", body.exportId);
+        const { data: updated, error } = await guard(
+          supabaseAdmin
+            .from("episode_exports")
+            .update({
+              state: "completed",
+              storage_path: body.storagePath,
+              mime_type: "video/mp4",
+              file_size_bytes: body.fileSizeBytes ?? file.size,
+              duration_seconds: body.durationSeconds ?? null,
+              error: null,
+              completed_at: new Date().toISOString(),
+            })
+            .select("id"),
+        ).maybeSingle();
         if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
+        if (!updated) {
+          // Another attempt finalised it while we were verifying the upload.
+          return Response.json({ ok: false, error: "stale_attempt" }, { status: 409 });
+        }
 
         return Response.json({ ok: true });
       },

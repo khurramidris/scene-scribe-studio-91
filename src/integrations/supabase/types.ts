@@ -259,6 +259,7 @@ export type Database = {
       episode_exports: {
         Row: {
           aspect: string
+          attempt_token: string | null
           attempts: number
           burn_subtitles: boolean
           claimed_at: string | null
@@ -286,6 +287,7 @@ export type Database = {
         }
         Insert: {
           aspect: string
+          attempt_token?: string | null
           attempts?: number
           burn_subtitles?: boolean
           claimed_at?: string | null
@@ -313,6 +315,7 @@ export type Database = {
         }
         Update: {
           aspect?: string
+          attempt_token?: string | null
           attempts?: number
           burn_subtitles?: boolean
           claimed_at?: string | null

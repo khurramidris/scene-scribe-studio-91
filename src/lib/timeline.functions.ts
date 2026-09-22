@@ -114,33 +114,42 @@ export const getEpisodeTimeline = createServerFn({ method: "POST" })
       if (take.status === "approved" && take.is_selected) approvedByShot.set(take.shot_id, take);
     }
 
+    // The clip list this episode would get if it were rebuilt from approved takes.
+    const approvedClips = ordered
+      .filter((shot: any) => approvedByShot.has(shot.id))
+      .map((shot: any, index: number) => {
+        const take = approvedByShot.get(shot.id);
+        return {
+          shotId: shot.id,
+          sceneId: shot.scene_id,
+          takeId: take.id,
+          order: index,
+          startAt: 0,
+          durationSeconds: Number(take.duration_seconds ?? shot.duration_seconds ?? 5),
+          trimInSeconds: 0,
+          trimOutSeconds: 0,
+          muted: false,
+          transitionIn: "cut" as const,
+        };
+      });
+
+    // A saved timeline is authoritative even when it is deliberately empty:
+    // clearing every clip and saving must survive a reload.
     let timeline: TimelineDocument;
-    if (saved?.clips && Array.isArray(saved.clips) && saved.clips.length) {
+    if (saved) {
       timeline = TimelineSchema.parse({
-        clips: saved.clips,
-        titleCard: saved.title_card && Object.keys(saved.title_card).length ? saved.title_card : undefined,
+        clips: Array.isArray(saved.clips) ? saved.clips : [],
+        titleCard:
+          saved.title_card && Object.keys(saved.title_card).length ? saved.title_card : undefined,
         subtitlesSrt: (saved.subtitles as any)?.srt ?? null,
         burnSubtitles: Boolean((saved.subtitles as any)?.burn),
       });
     } else {
-      const clips = ordered
-        .filter((shot: any) => approvedByShot.has(shot.id))
-        .map((shot: any, index: number) => {
-          const take = approvedByShot.get(shot.id);
-          return {
-            shotId: shot.id,
-            sceneId: shot.scene_id,
-            takeId: take.id,
-            order: index,
-            startAt: 0,
-            durationSeconds: Number(take.duration_seconds ?? shot.duration_seconds ?? 5),
-            trimInSeconds: 0,
-            trimOutSeconds: 0,
-            muted: false,
-            transitionIn: "cut" as const,
-          };
-        });
-      timeline = TimelineSchema.parse({ clips, subtitlesSrt: null, burnSubtitles: false });
+      timeline = TimelineSchema.parse({
+        clips: approvedClips,
+        subtitlesSrt: null,
+        burnSubtitles: false,
+      });
     }
 
     const totalDuration = timeline.clips.reduce((sum, clip) => sum + clipDuration(clip), 0);
@@ -150,6 +159,7 @@ export const getEpisodeTimeline = createServerFn({ method: "POST" })
       aspect,
       preset: EXPORT_PRESETS[aspect],
       timeline,
+      approvedClips,
       totalDuration,
       shots: ordered,
       scenes: scenes ?? [],
