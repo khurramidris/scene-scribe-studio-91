@@ -3,9 +3,14 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { VIDEO_BUCKET } from "./storyboard.functions";
+import {
+  loadUploadedFrames,
+  modeForInputs,
+  MAX_ACTIVE_VIDEO_JOBS,
+} from "./single-video.functions";
 
 /** Guard against runaway spending: concurrent renders per user. */
-export const MAX_ACTIVE_VIDEO_JOBS = 3;
+export { MAX_ACTIVE_VIDEO_JOBS };
 
 const ACTIVE_STATES = ["queued", "submitting", "processing", "downloading"] as const;
 
