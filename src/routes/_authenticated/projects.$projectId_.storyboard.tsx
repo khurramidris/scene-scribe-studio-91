@@ -668,7 +668,12 @@ function ShotBoard(props: {
                     {take.duration_seconds ? <span>{take.duration_seconds}s</span> : null}
                     <div className="ml-auto flex gap-1">
                       {url ? (
-                        <a href={url} download className="rounded p-1 hover:text-foreground">
+                        <a
+                          href={url}
+                          download
+                          aria-label={`Download take v${take.version}`}
+                          className="rounded p-1 hover:text-foreground"
+                        >
                           <Download className="h-3.5 w-3.5" />
                         </a>
                       ) : null}
