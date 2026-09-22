@@ -89,11 +89,13 @@ function AuthPage() {
   }
 
   return (
-    <div className="stage-light flex min-h-screen items-center justify-center px-4 py-12">
-      <div className="panel w-full max-w-md rounded-xl border border-border p-8">
-        <Link to="/" className="mb-6 flex items-center gap-2">
-          <Clapperboard className="size-5 text-primary" />
-          <span className="font-display text-sm font-semibold">Backlot Studio</span>
+    <div className="stage-light tech-grid flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="panel w-full max-w-md rounded-sm border border-border-strong p-8">
+        <Link to="/" className="mb-7 flex items-center gap-2.5">
+          <span className="flex size-6 items-center justify-center rounded-sm bg-primary">
+            <Clapperboard className="size-3.5 text-primary-foreground" />
+          </span>
+          <span className="font-display text-base font-bold tracking-tight">Backlot Studio</span>
         </Link>
         <h1 className="text-2xl font-semibold">
           {mode === "signin" ? "Sign in" : "Create your account"}

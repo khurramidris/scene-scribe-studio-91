@@ -134,6 +134,13 @@ function Landing() {
           ))}
         </div>
       </section>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-8">
+          <span className="meta-label">Backlot Studio — AI film production</span>
+          <span className="meta-label">9:16 vertical · 16:9 widescreen</span>
+        </div>
+      </footer>
     </div>
   );
 }
