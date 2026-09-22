@@ -29,6 +29,9 @@ const SubmitInput = z.object({
   shotId: z.string().uuid(),
   frameId: z.string().uuid().nullable().optional(),
   endFrameId: z.string().uuid().nullable().optional(),
+  /** Images the user uploaded from their device for this shot. */
+  startImageId: z.string().uuid().nullable().optional(),
+  endImageId: z.string().uuid().nullable().optional(),
   mode: z.enum(["text_to_video", "image_to_video", "first_last_frame"]),
   resolution: z.string().min(2).max(10),
   durationSeconds: z.number().min(1).max(60),
