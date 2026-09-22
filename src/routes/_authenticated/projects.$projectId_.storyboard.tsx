@@ -76,6 +76,7 @@ type SubmitVars = {
 };
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/storyboard")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Storyboard studio — Backlot Studio" },

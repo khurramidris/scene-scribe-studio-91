@@ -14,6 +14,7 @@ import {
 import { useAuth } from "@/modules/auth/useAuth";
 
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Sign in — Backlot Studio" },

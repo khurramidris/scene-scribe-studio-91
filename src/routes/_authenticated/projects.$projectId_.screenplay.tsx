@@ -45,6 +45,7 @@ import { LANGUAGES } from "@/modules/story/story.schemas";
 import { listRevisions } from "@/modules/story/story.service";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/screenplay")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Screenplay studio — Backlot Studio" },

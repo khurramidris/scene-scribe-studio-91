@@ -62,6 +62,7 @@ import {
 import { readContinuity, type Scene, type Shot } from "@/modules/screenplay/screenplay.types";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/shots")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Shot planning — Backlot Studio" },

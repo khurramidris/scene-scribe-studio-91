@@ -12,6 +12,7 @@ const STALE_MINUTES = 20;
  * every browser tab is closed, and recovers interrupted ones.
  */
 export const Route = createFileRoute("/api/public/cron/tick")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

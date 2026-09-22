@@ -4,6 +4,7 @@ import { ArrowRight, Clapperboard } from "lucide-react";
 import heroImage from "@/assets/hero-stage.jpg";
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Backlot Studio — AI microdrama production platform" },
