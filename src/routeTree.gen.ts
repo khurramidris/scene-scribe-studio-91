@@ -16,11 +16,15 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedProjectsProjectIdCharactersRouteImport } from './routes/_authenticated/projects.$projectId_.characters'
+import { Route as AuthenticatedProjectsProjectIdEditorRouteImport } from './routes/_authenticated/projects.$projectId_.editor'
 import { Route as AuthenticatedProjectsProjectIdScenesRouteImport } from './routes/_authenticated/projects.$projectId_.scenes'
 import { Route as AuthenticatedProjectsProjectIdScreenplayRouteImport } from './routes/_authenticated/projects.$projectId_.screenplay'
 import { Route as AuthenticatedProjectsProjectIdShotsRouteImport } from './routes/_authenticated/projects.$projectId_.shots'
 import { Route as AuthenticatedProjectsProjectIdStoryRouteImport } from './routes/_authenticated/projects.$projectId_.story'
 import { Route as AuthenticatedProjectsProjectIdStoryboardRouteImport } from './routes/_authenticated/projects.$projectId_.storyboard'
+import { Route as ApiPublicCronTickRouteImport } from './routes/api/public/cron.tick'
+import { Route as ApiPublicExportsClaimRouteImport } from './routes/api/public/exports.claim'
+import { Route as ApiPublicExportsCompleteRouteImport } from './routes/api/public/exports.complete'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +62,12 @@ const AuthenticatedProjectsProjectIdCharactersRoute =
     path: '/projects/$projectId/characters',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProjectsProjectIdEditorRoute =
+  AuthenticatedProjectsProjectIdEditorRouteImport.update({
+    id: '/projects/$projectId_/editor',
+    path: '/projects/$projectId/editor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdScenesRoute =
   AuthenticatedProjectsProjectIdScenesRouteImport.update({
     id: '/projects/$projectId_/scenes',
@@ -88,6 +98,22 @@ const AuthenticatedProjectsProjectIdStoryboardRoute =
     path: '/projects/$projectId/storyboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicCronTickRoute = ApiPublicCronTickRouteImport.update({
+  id: '/api/public/cron/tick',
+  path: '/api/public/cron/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicExportsClaimRoute = ApiPublicExportsClaimRouteImport.update({
+  id: '/api/public/exports/claim',
+  path: '/api/public/exports/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicExportsCompleteRoute =
+  ApiPublicExportsCompleteRouteImport.update({
+    id: '/api/public/exports/complete',
+    path: '/api/public/exports/complete',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,11 +122,15 @@ export interface FileRoutesByFullPath {
   '/queue': typeof AuthenticatedQueueRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
+  '/projects/$projectId/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
   '/projects/$projectId/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
+  '/api/public/cron/tick': typeof ApiPublicCronTickRoute
+  '/api/public/exports/claim': typeof ApiPublicExportsClaimRoute
+  '/api/public/exports/complete': typeof ApiPublicExportsCompleteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,11 +139,15 @@ export interface FileRoutesByTo {
   '/queue': typeof AuthenticatedQueueRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
+  '/projects/$projectId/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
   '/projects/$projectId/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/projects/$projectId/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/projects/$projectId/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/projects/$projectId/story': typeof AuthenticatedProjectsProjectIdStoryRoute
   '/projects/$projectId/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
+  '/api/public/cron/tick': typeof ApiPublicCronTickRoute
+  '/api/public/exports/claim': typeof ApiPublicExportsClaimRoute
+  '/api/public/exports/complete': typeof ApiPublicExportsCompleteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,11 +158,15 @@ export interface FileRoutesById {
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/$projectId_/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
+  '/_authenticated/projects/$projectId_/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
   '/_authenticated/projects/$projectId_/scenes': typeof AuthenticatedProjectsProjectIdScenesRoute
   '/_authenticated/projects/$projectId_/screenplay': typeof AuthenticatedProjectsProjectIdScreenplayRoute
   '/_authenticated/projects/$projectId_/shots': typeof AuthenticatedProjectsProjectIdShotsRoute
   '/_authenticated/projects/$projectId_/story': typeof AuthenticatedProjectsProjectIdStoryRoute
   '/_authenticated/projects/$projectId_/storyboard': typeof AuthenticatedProjectsProjectIdStoryboardRoute
+  '/api/public/cron/tick': typeof ApiPublicCronTickRoute
+  '/api/public/exports/claim': typeof ApiPublicExportsClaimRoute
+  '/api/public/exports/complete': typeof ApiPublicExportsCompleteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -139,11 +177,15 @@ export interface FileRouteTypes {
     | '/queue'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
+    | '/projects/$projectId/editor'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
     | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
     | '/projects/$projectId/storyboard'
+    | '/api/public/cron/tick'
+    | '/api/public/exports/claim'
+    | '/api/public/exports/complete'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -152,11 +194,15 @@ export interface FileRouteTypes {
     | '/queue'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
+    | '/projects/$projectId/editor'
     | '/projects/$projectId/scenes'
     | '/projects/$projectId/screenplay'
     | '/projects/$projectId/shots'
     | '/projects/$projectId/story'
     | '/projects/$projectId/storyboard'
+    | '/api/public/cron/tick'
+    | '/api/public/exports/claim'
+    | '/api/public/exports/complete'
   id:
     | '__root__'
     | '/'
@@ -166,17 +212,24 @@ export interface FileRouteTypes {
     | '/_authenticated/queue'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/$projectId_/characters'
+    | '/_authenticated/projects/$projectId_/editor'
     | '/_authenticated/projects/$projectId_/scenes'
     | '/_authenticated/projects/$projectId_/screenplay'
     | '/_authenticated/projects/$projectId_/shots'
     | '/_authenticated/projects/$projectId_/story'
     | '/_authenticated/projects/$projectId_/storyboard'
+    | '/api/public/cron/tick'
+    | '/api/public/exports/claim'
+    | '/api/public/exports/complete'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicCronTickRoute: typeof ApiPublicCronTickRoute
+  ApiPublicExportsClaimRoute: typeof ApiPublicExportsClaimRoute
+  ApiPublicExportsCompleteRoute: typeof ApiPublicExportsCompleteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -230,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdCharactersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/projects/$projectId_/editor': {
+      id: '/_authenticated/projects/$projectId_/editor'
+      path: '/projects/$projectId/editor'
+      fullPath: '/projects/$projectId/editor'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdEditorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/projects/$projectId_/scenes': {
       id: '/_authenticated/projects/$projectId_/scenes'
       path: '/projects/$projectId/scenes'
@@ -265,6 +325,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsProjectIdStoryboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/cron/tick': {
+      id: '/api/public/cron/tick'
+      path: '/api/public/cron/tick'
+      fullPath: '/api/public/cron/tick'
+      preLoaderRoute: typeof ApiPublicCronTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/exports/claim': {
+      id: '/api/public/exports/claim'
+      path: '/api/public/exports/claim'
+      fullPath: '/api/public/exports/claim'
+      preLoaderRoute: typeof ApiPublicExportsClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/exports/complete': {
+      id: '/api/public/exports/complete'
+      path: '/api/public/exports/complete'
+      fullPath: '/api/public/exports/complete'
+      preLoaderRoute: typeof ApiPublicExportsCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -273,6 +354,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedProjectsProjectIdCharactersRoute: typeof AuthenticatedProjectsProjectIdCharactersRoute
+  AuthenticatedProjectsProjectIdEditorRoute: typeof AuthenticatedProjectsProjectIdEditorRoute
   AuthenticatedProjectsProjectIdScenesRoute: typeof AuthenticatedProjectsProjectIdScenesRoute
   AuthenticatedProjectsProjectIdScreenplayRoute: typeof AuthenticatedProjectsProjectIdScreenplayRoute
   AuthenticatedProjectsProjectIdShotsRoute: typeof AuthenticatedProjectsProjectIdShotsRoute
@@ -286,6 +368,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedProjectsProjectIdCharactersRoute:
     AuthenticatedProjectsProjectIdCharactersRoute,
+  AuthenticatedProjectsProjectIdEditorRoute:
+    AuthenticatedProjectsProjectIdEditorRoute,
   AuthenticatedProjectsProjectIdScenesRoute:
     AuthenticatedProjectsProjectIdScenesRoute,
   AuthenticatedProjectsProjectIdScreenplayRoute:
@@ -305,6 +389,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicCronTickRoute: ApiPublicCronTickRoute,
+  ApiPublicExportsClaimRoute: ApiPublicExportsClaimRoute,
+  ApiPublicExportsCompleteRoute: ApiPublicExportsCompleteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

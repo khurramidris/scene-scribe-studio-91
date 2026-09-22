@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { rejectStoryboardFrame, rejectVideoTake } from "@/lib/storyboard.functions";
 
 import type { ProductionJob, StoryboardFrame, VideoTake } from "./production.types";
 
@@ -43,18 +44,15 @@ export async function deleteFrame(frame: StoryboardFrame): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Generated-media rows are written server side only: the browser may read and
+ * delete its own rows, but status changes go through a server function that
+ * re-checks ownership with the privileged client.
+ */
 export async function rejectFrame(frameId: string): Promise<void> {
-  const { error } = await supabase
-    .from("storyboard_frames")
-    .update({ status: "rejected", is_selected: false })
-    .eq("id", frameId);
-  if (error) throw new Error(error.message);
+  await rejectStoryboardFrame({ data: { frameId } });
 }
 
 export async function rejectTake(takeId: string): Promise<void> {
-  const { error } = await supabase
-    .from("video_takes")
-    .update({ status: "rejected", is_selected: false })
-    .eq("id", takeId);
-  if (error) throw new Error(error.message);
+  await rejectVideoTake({ data: { takeId } });
 }

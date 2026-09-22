@@ -8,6 +8,7 @@ const TABS = [
   { to: "/projects/$projectId/scenes", label: "Scenes" },
   { to: "/projects/$projectId/shots", label: "Shot planning" },
   { to: "/projects/$projectId/storyboard", label: "Storyboard" },
+  { to: "/projects/$projectId/editor", label: "Episode editor" },
 ] as const;
 
 

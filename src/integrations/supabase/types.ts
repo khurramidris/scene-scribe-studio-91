@@ -256,6 +256,162 @@ export type Database = {
           },
         ]
       }
+      episode_exports: {
+        Row: {
+          aspect: string
+          attempts: number
+          burn_subtitles: boolean
+          claimed_at: string | null
+          clip_count: number
+          completed_at: string | null
+          created_at: string
+          duration_seconds: number | null
+          episode_id: string
+          error: Json | null
+          file_size_bytes: number | null
+          fps: number
+          height: number
+          id: string
+          is_partial: boolean
+          mime_type: string | null
+          missing_shot_count: number
+          owner_id: string
+          preset: string
+          project_id: string
+          state: Database["public"]["Enums"]["export_state"]
+          storage_path: string | null
+          timeline: Json
+          updated_at: string
+          width: number
+        }
+        Insert: {
+          aspect: string
+          attempts?: number
+          burn_subtitles?: boolean
+          claimed_at?: string | null
+          clip_count?: number
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          episode_id: string
+          error?: Json | null
+          file_size_bytes?: number | null
+          fps?: number
+          height: number
+          id?: string
+          is_partial?: boolean
+          mime_type?: string | null
+          missing_shot_count?: number
+          owner_id: string
+          preset: string
+          project_id: string
+          state?: Database["public"]["Enums"]["export_state"]
+          storage_path?: string | null
+          timeline: Json
+          updated_at?: string
+          width: number
+        }
+        Update: {
+          aspect?: string
+          attempts?: number
+          burn_subtitles?: boolean
+          claimed_at?: string | null
+          clip_count?: number
+          completed_at?: string | null
+          created_at?: string
+          duration_seconds?: number | null
+          episode_id?: string
+          error?: Json | null
+          file_size_bytes?: number | null
+          fps?: number
+          height?: number
+          id?: string
+          is_partial?: boolean
+          mime_type?: string | null
+          missing_shot_count?: number
+          owner_id?: string
+          preset?: string
+          project_id?: string
+          state?: Database["public"]["Enums"]["export_state"]
+          storage_path?: string | null
+          timeline?: Json
+          updated_at?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episode_exports_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "episode_exports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      episode_timelines: {
+        Row: {
+          aspect: string
+          audio: Json
+          clips: Json
+          created_at: string
+          episode_id: string
+          id: string
+          owner_id: string
+          project_id: string
+          subtitles: Json
+          title_card: Json
+          updated_at: string
+        }
+        Insert: {
+          aspect?: string
+          audio?: Json
+          clips?: Json
+          created_at?: string
+          episode_id: string
+          id?: string
+          owner_id: string
+          project_id: string
+          subtitles?: Json
+          title_card?: Json
+          updated_at?: string
+        }
+        Update: {
+          aspect?: string
+          audio?: Json
+          clips?: Json
+          created_at?: string
+          episode_id?: string
+          id?: string
+          owner_id?: string
+          project_id?: string
+          subtitles?: Json
+          title_card?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episode_timelines_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: true
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "episode_timelines_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       episodes: {
         Row: {
           created_at: string
@@ -1631,6 +1787,13 @@ export type Database = {
       approval_status: "draft" | "pending" | "approved" | "rejected"
       aspect_format: "vertical_9_16" | "horizontal_16_9"
       character_reference_kind: "appearance" | "costume" | "expression" | "prop"
+      export_state:
+        | "queued"
+        | "processing"
+        | "uploading"
+        | "completed"
+        | "failed"
+        | "cancelled"
       outline_scope: "season" | "episode"
       production_job_state:
         | "queued"
@@ -1786,6 +1949,14 @@ export const Constants = {
       approval_status: ["draft", "pending", "approved", "rejected"],
       aspect_format: ["vertical_9_16", "horizontal_16_9"],
       character_reference_kind: ["appearance", "costume", "expression", "prop"],
+      export_state: [
+        "queued",
+        "processing",
+        "uploading",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
       outline_scope: ["season", "episode"],
       production_job_state: [
         "queued",

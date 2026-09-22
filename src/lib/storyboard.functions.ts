@@ -122,6 +122,9 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
 
   const { resolveImageProvider } = await import("@/services/ai/image.registry.server");
   const provider = resolveImageProvider();
+  // Generated-media rows are written with the privileged client only after the
+  // RLS-scoped read above proved the shot belongs to the caller.
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
 
   const references =
     useReferences && provider.supportsReferenceImages
@@ -130,7 +133,7 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
 
   const fullPrompt = [plan.prompt, extraPrompt].filter(Boolean).join(" ");
 
-  const { data: job, error: jobError } = await supabase
+  const { data: job, error: jobError } = await db
     .from("production_jobs")
     .insert({
       project_id: shot.project_id,
@@ -161,8 +164,7 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
     const ext = image.contentType === "image/svg+xml" ? "svg" : "png";
     const path = `${userId}/${shot.project_id}/${shot.id}/${crypto.randomUUID()}.${ext}`;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: uploadError } = await supabaseAdmin.storage
+    const { error: uploadError } = await db.storage
       .from(STORYBOARD_BUCKET)
       .upload(path, bytes, { contentType: image.contentType, upsert: false });
     if (uploadError) throw new Error(`Could not store the frame: ${uploadError.message}`);
@@ -172,7 +174,7 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
       .select("id", { count: "exact", head: true })
       .eq("shot_id", shot.id);
 
-    const { data: frame, error: frameError } = await supabase
+    const { data: frame, error: frameError } = await db
       .from("storyboard_frames")
       .insert({
         project_id: shot.project_id,
@@ -198,7 +200,7 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
       .single();
     if (frameError) throw new Error(frameError.message);
 
-    await supabase
+    await db
       .from("production_jobs")
       .update({
         state: "completed",
@@ -212,7 +214,7 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
     return frame;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "Frame generation failed.";
-    await supabase
+    await db
       .from("production_jobs")
       .update({
         state: "failed",
@@ -309,15 +311,16 @@ export const selectStoryboardFrame = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!frame) throw new Error("Frame not found.");
 
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     // Previous approvals are demoted to draft, never deleted.
-    const { error: demoteError } = await supabase
+    const { error: demoteError } = await db
       .from("storyboard_frames")
       .update({ is_selected: false, status: "draft" })
       .eq("shot_id", frame.shot_id)
       .neq("id", frame.id);
     if (demoteError) throw new Error(demoteError.message);
 
-    const { data: updated, error: promoteError } = await supabase
+    const { data: updated, error: promoteError } = await db
       .from("storyboard_frames")
       .update({ is_selected: true, status: "approved" })
       .eq("id", frame.id)
@@ -325,10 +328,11 @@ export const selectStoryboardFrame = createServerFn({ method: "POST" })
       .single();
     if (promoteError) throw new Error(promoteError.message);
 
-    await supabase
+    const { error: shotError } = await supabase
       .from("shots")
       .update({ storyboard_storage_path: frame.storage_path })
       .eq("id", frame.shot_id);
+    if (shotError) throw new Error(shotError.message);
 
     return updated;
   });
@@ -367,4 +371,54 @@ export const signStudioUrls = createServerFn({ method: "POST" })
       if (entry.path && entry.signedUrl) urls[entry.path] = entry.signedUrl;
     }
     return { urls };
+  });
+
+
+const RejectFrameInput = z.object({ frameId: z.string().uuid() });
+
+/** Rejects a frame. Writes go through the privileged client after an RLS-scoped ownership read. */
+export const rejectStoryboardFrame = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => RejectFrameInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as Ctx;
+    const { data: frame, error } = await supabase
+      .from("storyboard_frames")
+      .select("id")
+      .eq("id", data.frameId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!frame) throw new Error("Frame not found.");
+
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await db
+      .from("storyboard_frames")
+      .update({ status: "rejected", is_selected: false })
+      .eq("id", frame.id);
+    if (updateError) throw new Error(updateError.message);
+    return { ok: true };
+  });
+
+const RejectTakeInput = z.object({ takeId: z.string().uuid() });
+
+export const rejectVideoTake = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => RejectTakeInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context as Ctx;
+    const { data: take, error } = await supabase
+      .from("video_takes")
+      .select("id")
+      .eq("id", data.takeId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!take) throw new Error("Take not found.");
+
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { error: updateError } = await db
+      .from("video_takes")
+      .update({ status: "rejected", is_selected: false })
+      .eq("id", take.id);
+    if (updateError) throw new Error(updateError.message);
+    return { ok: true };
   });
