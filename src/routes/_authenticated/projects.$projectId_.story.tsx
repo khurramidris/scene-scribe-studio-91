@@ -42,6 +42,7 @@ import {
 } from "@/modules/story/story.types";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/story")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Story studio — Backlot Studio" },

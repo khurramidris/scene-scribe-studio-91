@@ -12,6 +12,7 @@ import { jobsQuery, productionKeys } from "@/modules/production/production.queri
 import { elapsedLabel, isActive, JOB_STATE_LABELS } from "@/modules/production/production.types";
 
 export const Route = createFileRoute("/_authenticated/queue")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Production queue — Backlot Studio" },

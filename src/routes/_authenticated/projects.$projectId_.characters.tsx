@@ -38,6 +38,7 @@ import {
 import { projectQuery } from "@/modules/projects/project.queries";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/characters")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Character studio — Backlot Studio" },

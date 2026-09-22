@@ -45,6 +45,7 @@ import { LANGUAGES } from "@/modules/story/story.schemas";
 import { listRevisions } from "@/modules/story/story.service";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/screenplay")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Screenplay studio — Backlot Studio" },
@@ -494,7 +495,7 @@ function SceneCard({
       {showHistory ? (
         <div className="mt-3 space-y-2 rounded-md border border-border bg-background p-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium">Revision history</h4>
+            <h2 className="text-sm font-medium">Revision history</h2>
             <Button size="sm" variant="ghost" onClick={() => void refetchRevisions()}>
               Refresh
             </Button>

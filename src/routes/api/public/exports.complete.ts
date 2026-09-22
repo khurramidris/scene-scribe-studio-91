@@ -34,6 +34,7 @@ export function expectedExportPath(record: {
  * never overwrite a newer attempt or an already completed export.
  */
 export const Route = createFileRoute("/api/public/exports/complete")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

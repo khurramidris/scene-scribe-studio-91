@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://scene-scribe-studio-91.lovable.app/sitemap.xml

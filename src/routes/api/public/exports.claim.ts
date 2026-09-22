@@ -13,6 +13,7 @@ const STALE_MINUTES = 30;
  * finished MP4, and authenticates with the shared cron secret.
  */
 export const Route = createFileRoute("/api/public/exports/claim")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

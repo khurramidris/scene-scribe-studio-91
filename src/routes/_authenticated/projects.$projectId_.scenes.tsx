@@ -59,6 +59,7 @@ import {
 } from "@/modules/screenplay/screenplay.types";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/scenes")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Scene breakdown — Backlot Studio" },

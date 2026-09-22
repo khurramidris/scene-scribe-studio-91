@@ -40,6 +40,7 @@ import { episodesQuery } from "@/modules/projects/project.queries";
 import { exportsQuery, timelineKeys, timelineQuery } from "@/modules/production/timeline.queries";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId_/editor")({
+  staticData: { sitemap: false },
   component: EpisodeEditorPage,
   head: () => ({
     meta: [
