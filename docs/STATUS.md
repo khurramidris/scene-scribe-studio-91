@@ -1,6 +1,7 @@
 # Status — implemented, verified, and outstanding
 
-Last verified: phase "Storyboard Studio, AI Video Generation & Production Job Management".
+Last verified: phase "Ship V1" (episode editor, MP4 export, background job recovery).
+
 
 ## Implemented and verified end to end
 
@@ -19,7 +20,11 @@ Last verified: phase "Storyboard Studio, AI Video Generation & Production Job Ma
 | Production jobs + queue | `production_jobs` rows for every image and video generation, idempotency keys, attempt counts, progress, structured errors, cancellation, per-user active-job limit (3); `/queue` page lists every job with provider, model, elapsed time, retry-by-polling, cancel and a link to the shot. |
 | Permanent media storage | Every generated frame and clip is downloaded server-side into the private `storyboard-frames` / `shot-videos` buckets; a failed download leaves the job `failed`, never `completed`. Playback uses short-lived signed URLs. |
 | Workflow overview | Production page shows the approval state of each stage and flags approved scenes that predate the latest story-bible change. |
-| Ownership hardening | Composite keys plus `owns_project()`; migration 0003 fixes optional FKs to column-specific `ON DELETE SET NULL`. |
+| Episode editor | Loads an episode's approved takes as an ordered timeline; reorder, remove, swap take, trim start/end, mute, title card, SRT burn-in, total duration, explicit Save, persisted in `episode_timelines`. |
+| MP4 export | `episode_exports` + standalone FFmpeg worker: normalise, concatenate, title card, subtitle burn-in, upload to the private `episode-exports` bucket, signed download, export history, partial exports allowed. |
+| Background job recovery | `/api/public/cron/tick` advances active video jobs and recovers stale ones; `/api/public/exports/claim` + `/complete` drive the export worker. Both authenticate with the cron secret; no credentials reach the browser. |
+| Ownership hardening | Composite keys plus `owns_project()`; migration 0003 fixes optional FKs to column-specific `ON DELETE SET NULL`; migration 0004 revokes direct browser writes to jobs, takes and frames and adds one-active-render and one-take-per-job unique indexes. |
+
 
 ## Part 1 corrections (this phase)
 
@@ -72,14 +77,77 @@ Signed in as a test director account against the live database:
   configured; their output is flagged `is_mock` in the database and badged
   "Mock" in the UI, and mock frames cannot be sent to video generation.
 
+## V1 acceptance test — executed live (real provider, real MP4)
+
+Signed in as the test director account against the live database and the
+configured gateway renderer:
+
+1. Production "V1 Export Acceptance" (vertical 9:16), episode 1 "Last Train",
+   approved screenplay, approved scene, three approved shot plans.
+2. "Frames for this scene" produced **three real** storyboard frames
+   (`is_mock = false`) in the private `storyboard-frames` bucket; one frame was
+   approved and selected per shot.
+3. Three **real** image-to-video renders were submitted (provider `ai-gateway`,
+   model `google/gemini-omni-1.1-flash`, 360p, 3s each). All three reached
+   `completed` and were stored in the private `shot-videos` bucket
+   (921,590 / 938,917 / 693,354 bytes). One take approved per shot.
+4. Episode editor loaded all three clips in narrative order (0:09 total).
+   Clip 1 was trimmed by 1s, saved, and the page reloaded — the timeline came
+   back at 0:08 with the trim intact.
+5. "Export episode" queued an export; the FFmpeg worker claimed it, normalised,
+   concatenated and uploaded the result.
+6. The finished MP4 was downloaded through the app's signed download link and
+   inspected: **h264 + aac, 1080×1920, 8.02s, 6,396,538 bytes** — matching the
+   trimmed timeline exactly. It plays.
+7. Source takes, timeline, export record and MP4 all survived a reload.
+
+### Failure-recovery tests (separate)
+
+- **Interrupted export**: an export left in `processing` past the 30-minute
+  stale window was automatically requeued by the claim endpoint and rendered to
+  `completed` on the next worker run.
+- **Unreadable source clip**: an export whose clip path does not exist was
+  marked `failed` with "A source clip could not be read." and surfaced in the
+  export history; it was never reported as completed.
+- **Duplicate finalisation**: covered by `tests/job-idempotency.test.ts` plus
+  the `video_takes_one_per_job` unique index and the atomic
+  `processing → downloading` claim.
+
+## Tested with mocks only
+
+- The external REST provider and the self-hosted GPU provider (documented in
+  `docs/VIDEO_PROVIDER_CONTRACT.md`) — no such endpoint is configured here.
+- `MockVideoProvider` / `MockImageProvider` are used only when no provider is
+  configured; their output is flagged `is_mock` in the database and badged
+  "Mock" in the UI, and mock frames cannot be sent to video generation or
+  exported.
+
 ## Build, typecheck and tests
 
 - `bunx tsgo --noEmit` — clean.
 - Production build — OK.
-- `bunx vitest run` — 60 tests passing (story and screenplay schemas, season
-  reordering, provider mock flagging, video capability negotiation, shot
-  regeneration with partially approved sequences, anonymous isolation,
-  two-account authenticated isolation).
+- `bunx vitest run` — **84 tests passing** across 10 files (story and screenplay
+  schemas, season reordering, provider mock flagging, video capability
+  negotiation, shot regeneration with partially approved sequences, anonymous
+  isolation, two-account authenticated isolation, job idempotency, timeline
+  persistence and export validation).
+
+## Running the export worker
+
+`worker/export-worker/` is a standalone Node + FFmpeg service (source,
+`Dockerfile` and `README.md` included). It holds no database or provider
+credentials: it authenticates with the shared cron secret and receives only
+short-lived signed URLs.
+
+```
+BACKLOT_APP_URL=https://<your-app-host> \
+BACKLOT_CRON_SECRET=<shared secret> \
+node worker/export-worker/index.mjs        # add RUN_ONCE=1 for a single pass
+```
+
+It was run locally against the dev server for the acceptance test above. It is
+**not yet deployed** to a hosted environment — that is a manual deployment step
+(any container host will do).
 
 ## Environment variables (no values)
 
@@ -92,18 +160,19 @@ Signed in as a test director account against the live database:
 | `VIDEO_PROVIDER` | `gateway` \| `external` \| `selfhosted` \| `mock` |
 | `EXTERNAL_VIDEO_API_URL`, `EXTERNAL_VIDEO_API_KEY`, `EXTERNAL_VIDEO_MODEL` | External commercial renderer |
 | `SELF_HOSTED_RENDER_URL`, `SELF_HOSTED_RENDER_TOKEN`, `SELF_HOSTED_RENDER_MODEL` | Future GPU worker |
+| `LOVABLE_CRON_SECRET` (+ `_PREVIOUS` during rotation) | Authenticates the cron tick and the export worker |
+| `BACKLOT_APP_URL`, `BACKLOT_CRON_SECRET` | Export worker configuration |
 
 ## Outstanding / not yet built
 
-- Episode editor (timeline assembly), audio/dialogue generation, subtitles and
-  final export. The data contracts exist in
-  `src/modules/production/production.types.ts`; no tables or UI yet.
-- Job progress currently advances while a page polls it; a persistent
-  background worker has **not** been deployed. Long renders continue on the
-  provider side and are picked up on the next poll or from the queue page.
+- Export worker not deployed to a hosted environment (runs on demand today).
+- Audio: clip audio is preserved and clips can be muted; no background-music
+  upload, AI dubbing, voice cloning or automatic subtitle generation.
+  Subtitles are supported by uploading an SRT and burning it in.
 - Billing, credits and usage metering.
-- Playwright smoke suite committed to the repo (flows were driven manually).
-- `.env` still tracked by Git (see above).
+- Playwright smoke suite committed to the repo (flows were driven ad hoc).
+- `.env` still tracked by Git — run `git rm --cached .env` locally. It holds
+  only publishable keys, so no credential rotation is required.
 
 ## External services required
 
@@ -112,6 +181,7 @@ Signed in as a test director account against the live database:
 | Database, auth, storage | PostgreSQL / Supabase project |
 | Text + image + video generation | Lovable AI gateway, or any compatible gateway via `AI_GATEWAY_URL` |
 | Long-form / high-res video | External commercial API or self-hosted GPU renderer implementing `docs/VIDEO_PROVIDER_CONTRACT.md` |
-| Video assembly (FFmpeg) | Separate worker service |
+| Video assembly (FFmpeg) | `worker/export-worker` on any container host |
 | Payments | Stripe or Paddle |
 | Media delivery | CDN in front of the storage bucket |
+
