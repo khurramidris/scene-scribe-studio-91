@@ -551,7 +551,7 @@ export type Database = {
           model: string
           owner_id: string
           progress: number
-          project_id: string
+          project_id: string | null
           provider: string
           provider_job_id: string | null
           request: Json
@@ -559,6 +559,7 @@ export type Database = {
           result_kind: string | null
           scene_id: string | null
           shot_id: string | null
+          single_video_id: string | null
           state: Database["public"]["Enums"]["production_job_state"]
           submitted_at: string | null
           updated_at: string
@@ -580,7 +581,7 @@ export type Database = {
           model: string
           owner_id: string
           progress?: number
-          project_id: string
+          project_id?: string | null
           provider: string
           provider_job_id?: string | null
           request?: Json
@@ -588,6 +589,7 @@ export type Database = {
           result_kind?: string | null
           scene_id?: string | null
           shot_id?: string | null
+          single_video_id?: string | null
           state?: Database["public"]["Enums"]["production_job_state"]
           submitted_at?: string | null
           updated_at?: string
@@ -609,7 +611,7 @@ export type Database = {
           model?: string
           owner_id?: string
           progress?: number
-          project_id?: string
+          project_id?: string | null
           provider?: string
           provider_job_id?: string | null
           request?: Json
@@ -617,6 +619,7 @@ export type Database = {
           result_kind?: string | null
           scene_id?: string | null
           shot_id?: string | null
+          single_video_id?: string | null
           state?: Database["public"]["Enums"]["production_job_state"]
           submitted_at?: string | null
           updated_at?: string
@@ -649,6 +652,13 @@ export type Database = {
             columns: ["shot_id"]
             isOneToOne: false
             referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_jobs_single_video_id_fkey"
+            columns: ["single_video_id"]
+            isOneToOne: false
+            referencedRelation: "single_videos"
             referencedColumns: ["id"]
           },
         ]
@@ -1257,6 +1267,97 @@ export type Database = {
           },
         ]
       }
+      single_videos: {
+        Row: {
+          aspect: string
+          created_at: string
+          duration_seconds: number | null
+          end_image_id: string | null
+          file_size_bytes: number | null
+          height: number | null
+          id: string
+          is_mock: boolean
+          job_id: string | null
+          mime_type: string
+          mode: string
+          model: string
+          owner_id: string
+          prompt: string
+          provider: string
+          requested_duration_seconds: number
+          resolution: string
+          start_image_id: string | null
+          storage_path: string
+          width: number | null
+        }
+        Insert: {
+          aspect: string
+          created_at?: string
+          duration_seconds?: number | null
+          end_image_id?: string | null
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          job_id?: string | null
+          mime_type: string
+          mode: string
+          model: string
+          owner_id: string
+          prompt: string
+          provider: string
+          requested_duration_seconds: number
+          resolution: string
+          start_image_id?: string | null
+          storage_path: string
+          width?: number | null
+        }
+        Update: {
+          aspect?: string
+          created_at?: string
+          duration_seconds?: number | null
+          end_image_id?: string | null
+          file_size_bytes?: number | null
+          height?: number | null
+          id?: string
+          is_mock?: boolean
+          job_id?: string | null
+          mime_type?: string
+          mode?: string
+          model?: string
+          owner_id?: string
+          prompt?: string
+          provider?: string
+          requested_duration_seconds?: number
+          resolution?: string
+          start_image_id?: string | null
+          storage_path?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "single_videos_end_image_id_fkey"
+            columns: ["end_image_id"]
+            isOneToOne: false
+            referencedRelation: "user_images"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "single_videos_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: true
+            referencedRelation: "production_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "single_videos_start_image_id_fkey"
+            columns: ["start_image_id"]
+            isOneToOne: false
+            referencedRelation: "user_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       story_artifacts: {
         Row: {
           content: string
@@ -1557,6 +1658,60 @@ export type Database = {
           },
           {
             foreignKeyName: "storyboard_frames_shot_id_fkey"
+            columns: ["shot_id"]
+            isOneToOne: false
+            referencedRelation: "shots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_images: {
+        Row: {
+          created_at: string
+          file_size_bytes: number | null
+          id: string
+          mime_type: string
+          original_name: string | null
+          owner_id: string
+          project_id: string | null
+          role: string
+          shot_id: string | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type: string
+          original_name?: string | null
+          owner_id: string
+          project_id?: string | null
+          role?: string
+          shot_id?: string | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          file_size_bytes?: number | null
+          id?: string
+          mime_type?: string
+          original_name?: string | null
+          owner_id?: string
+          project_id?: string | null
+          role?: string
+          shot_id?: string | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_images_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_images_shot_id_fkey"
             columns: ["shot_id"]
             isOneToOne: false
             referencedRelation: "shots"

@@ -49,11 +49,43 @@ class GatewayVideoProvider implements VideoProvider {
   async submit(request: VideoSubmitRequest): Promise<VideoJobHandle> {
     assertSupported(this.capabilities, request);
 
-    const parts: unknown[] = [{ type: "text", text: request.prompt }];
-    for (const image of request.images) {
+    // Image roles are bound explicitly. The model reads the ordered media parts
+    // through the role tags declared in the prompt, so a first/last frame pair
+    // is never two unlabelled pictures.
+    const ordered = [
+      ...request.images.filter((i) => i.role === "first_frame"),
+      ...request.images.filter((i) => i.role === "last_frame"),
+      ...request.images.filter((i) => i.role === "reference"),
+    ];
+    const first = ordered.find((i) => i.role === "first_frame");
+    const last = ordered.find((i) => i.role === "last_frame");
+
+    const roleLines: string[] = [];
+    if (first && last) {
+      roleLines.push(
+        "[# Sources <FIRST_FRAME>@Image1, <LAST_FRAME>@Image2]",
+        "Begin the video exactly on <FIRST_FRAME> and end it exactly on <LAST_FRAME>, interpolating a single continuous shot between them.",
+      );
+    } else if (first) {
+      roleLines.push(
+        "[# Sources <FIRST_FRAME>@Image1]",
+        "Begin the video exactly on <FIRST_FRAME> and animate forward from it.",
+      );
+    }
+    const references = ordered.filter((i) => i.role === "reference");
+    references.forEach((_, index) => {
+      roleLines.push(`[# References <IMAGE_REF_${index}>] Use it as a likeness reference only.`);
+    });
+    if (request.negativePrompt) roleLines.push(`Avoid: ${request.negativePrompt}.`);
+
+    const parts: unknown[] = [
+      { type: "text", text: [...roleLines, request.prompt].filter(Boolean).join(" ") },
+    ];
+    for (const image of ordered) {
       parts.push({ type: "image", data: image.base64, mime_type: image.mimeType });
     }
 
+    const task = ordered.length ? "image_to_video" : "text_to_video";
     const body: Record<string, unknown> = {
       model: this.model,
       input: parts,
@@ -63,6 +95,7 @@ class GatewayVideoProvider implements VideoProvider {
         duration: `${Math.round(request.durationSeconds)}s`,
         aspect_ratio: request.aspect,
       },
+      generation_config: { video_config: { task } },
     };
 
     const res = await fetch(`${this.baseUrl}/videos`, {

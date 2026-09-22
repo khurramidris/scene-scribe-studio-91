@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedQueueRouteImport } from './routes/_authenticated/queue'
+import { Route as AuthenticatedSingleVideoRouteImport } from './routes/_authenticated/single-video'
 import { Route as AuthenticatedProjectsProjectIdRouteImport } from './routes/_authenticated/projects.$projectId'
 import { Route as AuthenticatedProjectsProjectIdCharactersRouteImport } from './routes/_authenticated/projects.$projectId_.characters'
 import { Route as AuthenticatedProjectsProjectIdEditorRouteImport } from './routes/_authenticated/projects.$projectId_.editor'
@@ -56,6 +57,12 @@ const AuthenticatedQueueRoute = AuthenticatedQueueRouteImport.update({
   path: '/queue',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSingleVideoRoute =
+  AuthenticatedSingleVideoRouteImport.update({
+    id: '/single-video',
+    path: '/single-video',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProjectsProjectIdRoute =
   AuthenticatedProjectsProjectIdRouteImport.update({
     id: '/projects/$projectId',
@@ -127,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/queue': typeof AuthenticatedQueueRoute
+  '/single-video': typeof AuthenticatedSingleVideoRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
@@ -145,6 +153,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/queue': typeof AuthenticatedQueueRoute
+  '/single-video': typeof AuthenticatedSingleVideoRoute
   '/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/projects/$projectId/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/projects/$projectId/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
@@ -165,6 +174,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/queue': typeof AuthenticatedQueueRoute
+  '/_authenticated/single-video': typeof AuthenticatedSingleVideoRoute
   '/_authenticated/projects/$projectId': typeof AuthenticatedProjectsProjectIdRoute
   '/_authenticated/projects/$projectId_/characters': typeof AuthenticatedProjectsProjectIdCharactersRoute
   '/_authenticated/projects/$projectId_/editor': typeof AuthenticatedProjectsProjectIdEditorRoute
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/queue'
+    | '/single-video'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
     | '/projects/$projectId/editor'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/dashboard'
     | '/queue'
+    | '/single-video'
     | '/projects/$projectId'
     | '/projects/$projectId/characters'
     | '/projects/$projectId/editor'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/queue'
+    | '/_authenticated/single-video'
     | '/_authenticated/projects/$projectId'
     | '/_authenticated/projects/$projectId_/characters'
     | '/_authenticated/projects/$projectId_/editor'
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/queue'
       fullPath: '/queue'
       preLoaderRoute: typeof AuthenticatedQueueRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/single-video': {
+      id: '/_authenticated/single-video'
+      path: '/single-video'
+      fullPath: '/single-video'
+      preLoaderRoute: typeof AuthenticatedSingleVideoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/projects/$projectId': {
@@ -372,6 +392,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedQueueRoute: typeof AuthenticatedQueueRoute
+  AuthenticatedSingleVideoRoute: typeof AuthenticatedSingleVideoRoute
   AuthenticatedProjectsProjectIdRoute: typeof AuthenticatedProjectsProjectIdRoute
   AuthenticatedProjectsProjectIdCharactersRoute: typeof AuthenticatedProjectsProjectIdCharactersRoute
   AuthenticatedProjectsProjectIdEditorRoute: typeof AuthenticatedProjectsProjectIdEditorRoute
@@ -385,6 +406,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedQueueRoute: AuthenticatedQueueRoute,
+  AuthenticatedSingleVideoRoute: AuthenticatedSingleVideoRoute,
   AuthenticatedProjectsProjectIdRoute: AuthenticatedProjectsProjectIdRoute,
   AuthenticatedProjectsProjectIdCharactersRoute:
     AuthenticatedProjectsProjectIdCharactersRoute,
