@@ -21,9 +21,17 @@ export function StudioShell({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              to="/queue"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+              activeProps={{ className: "text-foreground" }}
+            >
+              Production queue
+            </Link>
             {user?.email ? (
               <span className="hidden text-xs text-muted-foreground sm:inline">{user.email}</span>
             ) : null}
+
             <Button
               variant="ghost"
               size="sm"
