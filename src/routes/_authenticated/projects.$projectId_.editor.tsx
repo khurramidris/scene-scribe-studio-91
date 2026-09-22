@@ -455,15 +455,40 @@ function EpisodeEditorPage() {
 
                         {playingIndex === index && url && (
                           <video
+                            key={`${clip.takeId}-${clip.trimInSeconds}-${clip.trimOutSeconds}`}
                             ref={videoRef}
                             src={url}
                             controls
                             autoPlay
                             muted={clip.muted}
                             className="mt-3 max-h-80 w-full rounded-md bg-black"
-                            onEnded={() => {
-                              if (index + 1 < clips.length) setPlayingIndex(index + 1);
-                              else setPlayingIndex(null);
+                            onLoadedMetadata={(event) => {
+                              // Start where the user trimmed, not at the source start.
+                              const video = event.currentTarget;
+                              const start = Math.min(
+                                clip.trimInSeconds,
+                                Math.max(0, (video.duration || clip.durationSeconds) - 0.05),
+                              );
+                              if (start > 0) video.currentTime = start;
+                            }}
+                            onTimeUpdate={(event) => {
+                              const video = event.currentTarget;
+                              const source = video.duration || clip.durationSeconds;
+                              const end = Math.max(
+                                clip.trimInSeconds,
+                                source - clip.trimOutSeconds,
+                              );
+                              if (video.currentTime >= end - 0.03) {
+                                video.pause();
+                                advanceFrom(index);
+                              }
+                            }}
+                            onEnded={() => advanceFrom(index)}
+                            onError={() => {
+                              setPlayingIndex(null);
+                              toast.error(
+                                "This clip could not be played. Refresh the page to renew its media link.",
+                              );
                             }}
                           />
                         )}
