@@ -117,6 +117,7 @@ export const Route = createFileRoute("/api/public/exports/claim")({
           ok: true,
           job: {
             id: claimed.id,
+            attemptToken,
             width: claimed.width,
             height: claimed.height,
             fps: claimed.fps,
