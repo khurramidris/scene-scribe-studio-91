@@ -241,6 +241,10 @@ export async function advanceJobRecord(job: any) {
   if (!["processing", "submitting", "downloading"].includes(job.state)) return job;
   if (!job.provider_job_id) return job;
 
+  /** Standalone single clips carry no shot, scene or episode. */
+  const isSingle = job.job_type === "single_video";
+  const assetTable = isSingle ? "single_videos" : "video_takes";
+
   const { resolveVideoProvider } = await import("@/services/video/video.registry.server");
   const provider = resolveVideoProvider(job.provider === "mock" ? "mock" : undefined);
   const handle = {
@@ -274,7 +278,9 @@ export async function advanceJobRecord(job: any) {
   }
 
   if (status.state !== "completed") {
-    await db.from("shots").update({ production_status: "failed" }).eq("id", job.shot_id);
+    if (!isSingle) {
+      await db.from("shots").update({ production_status: "failed" }).eq("id", job.shot_id);
+    }
     const { data: failed } = await db
       .from("production_jobs")
       .update({
@@ -306,20 +312,20 @@ export async function advanceJobRecord(job: any) {
     return current ?? job;
   }
 
-  // Idempotency: if a previous attempt already stored the take, just finish.
-  const { data: existingTake } = await db
-    .from("video_takes")
+  // Idempotency: if a previous attempt already stored the asset, just finish.
+  const { data: existingAsset } = await db
+    .from(assetTable)
     .select("*")
     .eq("job_id", job.id)
     .maybeSingle();
-  if (existingTake) {
+  if (existingAsset) {
     const { data: done } = await db
       .from("production_jobs")
       .update({
         state: "completed",
         progress: 100,
-        result_kind: "video_take",
-        result_asset_id: existingTake.id,
+        result_kind: isSingle ? "single_video" : "video_take",
+        result_asset_id: existingAsset.id,
         completed_at: new Date().toISOString(),
         error: null,
       })
@@ -332,60 +338,94 @@ export async function advanceJobRecord(job: any) {
   try {
     const result = await provider.fetchResult(handle);
     const ext = result.mimeType.includes("mp4") ? "mp4" : "bin";
-    const path = `${job.owner_id}/${job.project_id}/${job.shot_id}/${crypto.randomUUID()}.${ext}`;
+    const path = isSingle
+      ? `${job.owner_id}/single/${crypto.randomUUID()}.${ext}`
+      : `${job.owner_id}/${job.project_id}/${job.shot_id}/${crypto.randomUUID()}.${ext}`;
 
     const { error: uploadError } = await db.storage
       .from(VIDEO_BUCKET)
       .upload(path, result.bytes, { contentType: result.mimeType, upsert: false });
     if (uploadError) throw new Error(`Storing the clip failed: ${uploadError.message}`);
 
-    const { count } = await db
-      .from("video_takes")
-      .select("id", { count: "exact", head: true })
-      .eq("shot_id", job.shot_id);
-
     const request = (job.request ?? {}) as Record<string, any>;
-    const { data: take, error: takeError } = await db
-      .from("video_takes")
-      .insert({
-        project_id: job.project_id,
-        episode_id: job.episode_id,
-        scene_id: job.scene_id,
-        shot_id: job.shot_id,
-        owner_id: job.owner_id,
-        version: (count ?? 0) + 1,
-        mode: request["mode"] ?? "image_to_video",
-        prompt: request["prompt"] ?? "",
-        negative_prompt: request["negativePrompt"] ?? null,
-        provider: job.provider,
-        model: job.model,
-        settings: request as unknown as never,
-        seed: request["seed"] ?? null,
-        source_frame_id: request["frameId"] ?? null,
-        storage_path: path,
-        mime_type: result.mimeType,
-        file_size_bytes: result.bytes.byteLength,
-        duration_seconds: result.durationSeconds ?? request["durationSeconds"] ?? null,
-        width: result.width ?? null,
-        height: result.height ?? null,
-        aspect: request["aspect"] ?? "9:16",
-        is_mock: job.is_mock,
-        job_id: job.id,
-        usage: (result.usage ?? {}) as unknown as never,
-      })
-      .select("*")
-      .single();
-    if (takeError) throw new Error(takeError.message);
 
-    await db.from("shots").update({ production_status: "rendered" }).eq("id", job.shot_id);
+    let assetId: string;
+    if (isSingle) {
+      const { data: video, error: videoError } = await db
+        .from("single_videos")
+        .insert({
+          owner_id: job.owner_id,
+          prompt: request["prompt"] ?? "",
+          mode: request["mode"] ?? "text_to_video",
+          aspect: request["aspect"] ?? "9:16",
+          resolution: request["resolution"] ?? "720p",
+          requested_duration_seconds: request["durationSeconds"] ?? 5,
+          start_image_id: request["startImageId"] ?? null,
+          end_image_id: request["endImageId"] ?? null,
+          provider: job.provider,
+          model: job.model,
+          storage_path: path,
+          mime_type: result.mimeType,
+          file_size_bytes: result.bytes.byteLength,
+          duration_seconds: result.durationSeconds ?? request["durationSeconds"] ?? null,
+          width: result.width ?? null,
+          height: result.height ?? null,
+          is_mock: job.is_mock,
+          job_id: job.id,
+        })
+        .select("*")
+        .single();
+      if (videoError) throw new Error(videoError.message);
+      assetId = video.id;
+      await db.from("production_jobs").update({ single_video_id: video.id }).eq("id", job.id);
+    } else {
+      const { count } = await db
+        .from("video_takes")
+        .select("id", { count: "exact", head: true })
+        .eq("shot_id", job.shot_id);
+
+      const { data: take, error: takeError } = await db
+        .from("video_takes")
+        .insert({
+          project_id: job.project_id,
+          episode_id: job.episode_id,
+          scene_id: job.scene_id,
+          shot_id: job.shot_id,
+          owner_id: job.owner_id,
+          version: (count ?? 0) + 1,
+          mode: request["mode"] ?? "image_to_video",
+          prompt: request["prompt"] ?? "",
+          negative_prompt: request["negativePrompt"] ?? null,
+          provider: job.provider,
+          model: job.model,
+          settings: request as unknown as never,
+          seed: request["seed"] ?? null,
+          source_frame_id: request["frameId"] ?? null,
+          storage_path: path,
+          mime_type: result.mimeType,
+          file_size_bytes: result.bytes.byteLength,
+          duration_seconds: result.durationSeconds ?? request["durationSeconds"] ?? null,
+          width: result.width ?? null,
+          height: result.height ?? null,
+          aspect: request["aspect"] ?? "9:16",
+          is_mock: job.is_mock,
+          job_id: job.id,
+          usage: (result.usage ?? {}) as unknown as never,
+        })
+        .select("*")
+        .single();
+      if (takeError) throw new Error(takeError.message);
+      assetId = take.id;
+      await db.from("shots").update({ production_status: "rendered" }).eq("id", job.shot_id);
+    }
 
     const { data: completed } = await db
       .from("production_jobs")
       .update({
         state: "completed",
         progress: 100,
-        result_kind: "video_take",
-        result_asset_id: take.id,
+        result_kind: isSingle ? "single_video" : "video_take",
+        result_asset_id: assetId,
         usage: (result.usage ?? {}) as unknown as never,
         completed_at: new Date().toISOString(),
         error: null,
@@ -396,7 +436,9 @@ export async function advanceJobRecord(job: any) {
     return completed;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "Download failed.";
-    await db.from("shots").update({ production_status: "failed" }).eq("id", job.shot_id);
+    if (!isSingle) {
+      await db.from("shots").update({ production_status: "failed" }).eq("id", job.shot_id);
+    }
     const { data: failed } = await db
       .from("production_jobs")
       .update({
