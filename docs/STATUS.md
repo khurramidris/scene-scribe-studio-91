@@ -1,6 +1,7 @@
 # Status — implemented, verified, and outstanding
 
-Last verified: phase "Storyboard Studio, AI Video Generation & Production Job Management".
+Last verified: phase "Ship V1" (episode editor, MP4 export, background job recovery).
+
 
 ## Implemented and verified end to end
 
