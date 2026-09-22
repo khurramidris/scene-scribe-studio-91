@@ -84,15 +84,19 @@ export const submitShotVideo = createServerFn({ method: "POST" })
     const { resolveVideoProvider } = await import("@/services/video/video.registry.server");
     const provider = resolveVideoProvider();
 
-    if (data.mode !== "text_to_video" && !data.frameId) {
-      throw new Error("Select an approved storyboard frame before rendering from an image.");
-    }
-    if (data.mode === "first_last_frame" && !data.endFrameId) {
-      throw new Error("Select an approved ending frame for first/last frame rendering.");
-    }
-    if (!provider.capabilities.modes.includes(data.mode)) {
+    // The mode always follows the images actually supplied, so an uploaded
+    // ending image can never be silently dropped or a mode silently swapped.
+    const hasStart = Boolean(data.frameId || data.startImageId);
+    const hasEnd = Boolean(data.endFrameId || data.endImageId);
+    const mode = modeForInputs(hasStart, hasEnd);
+    if (mode !== data.mode) {
       throw new Error(
-        `The configured renderer (${provider.name}) does not support ${data.mode.replace(/_/g, " ")}.`,
+        `The supplied images require ${mode.replace(/_/g, " ")}. Adjust the images or the mode.`,
+      );
+    }
+    if (!provider.capabilities.modes.includes(mode)) {
+      throw new Error(
+        `The configured renderer (${provider.name}) does not support ${mode.replace(/_/g, " ")}.`,
       );
     }
 
@@ -101,7 +105,7 @@ export const submitShotVideo = createServerFn({ method: "POST" })
     const images: { base64: string; mimeType: string; role: "first_frame" | "last_frame" }[] = [];
     const frameIds = [
       { id: data.frameId, role: "first_frame" as const },
-      { id: data.mode === "first_last_frame" ? data.endFrameId : null, role: "last_frame" as const },
+      { id: hasEnd ? data.endFrameId : null, role: "last_frame" as const },
     ];
     for (const entry of frameIds) {
       if (!entry.id) continue;
@@ -133,6 +137,13 @@ export const submitShotVideo = createServerFn({ method: "POST" })
         role: entry.role,
       });
     }
+
+    // Device uploads for this shot, checked against the caller's own rows.
+    const uploaded = await loadUploadedFrames(supabase, [
+      { id: data.frameId ? null : data.startImageId, role: "first_frame" },
+      { id: data.endFrameId ? null : data.endImageId, role: "last_frame" },
+    ]);
+    images.push(...uploaded);
 
     const prompt = [
       shot.video_prompt || shot.description || "Cinematic shot.",
