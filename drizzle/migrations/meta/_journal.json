@@ -57,6 +57,13 @@
       "when": 1790078731997,
       "tag": "0007_0005_single_video_job_type",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790078782178,
+      "tag": "0008_0006_user_uploads_and_single_videos",
+      "breakpoints": true
     }
   ]
 }
