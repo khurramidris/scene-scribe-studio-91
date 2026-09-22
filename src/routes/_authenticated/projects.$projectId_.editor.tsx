@@ -85,6 +85,17 @@ function clipLength(clip: Clip): number {
   return Math.max(0, clip.durationSeconds - clip.trimInSeconds - clip.trimOutSeconds);
 }
 
+/** An export nobody has picked up for a while, so the user is not left guessing. */
+export function isStalled(record: {
+  state: string;
+  created_at: string;
+  updated_at?: string | null;
+}): boolean {
+  if (record.state !== "queued" && record.state !== "processing") return false;
+  const since = new Date(record.updated_at ?? record.created_at).getTime();
+  return Date.now() - since > 5 * 60 * 1000;
+}
+
 function formatDuration(seconds: number): string {
   const total = Math.round(seconds);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
