@@ -163,7 +163,7 @@ export const submitShotVideo = createServerFn({ method: "POST" })
       .join(" ");
 
     const request = {
-      mode: data.mode,
+      mode,
       prompt,
       negativePrompt: provider.capabilities.supportsNegativePrompt
         ? data.negativePrompt
@@ -188,13 +188,15 @@ export const submitShotVideo = createServerFn({ method: "POST" })
         provider: provider.name,
         model: provider.model,
         request: {
-          mode: data.mode,
+          mode,
           prompt,
           resolution: data.resolution,
           durationSeconds: data.durationSeconds,
           aspect,
           frameId: data.frameId ?? null,
           endFrameId: data.endFrameId ?? null,
+          startImageId: data.startImageId ?? null,
+          endImageId: data.endImageId ?? null,
           negativePrompt: request.negativePrompt ?? null,
           seed: request.seed ?? null,
           // Kept so a later poll finishes the job with the same configuration.
