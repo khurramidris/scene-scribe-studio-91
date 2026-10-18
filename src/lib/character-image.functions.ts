@@ -52,9 +52,33 @@ export const generateCharacterImages = createServerFn({ method: "POST" })
     const provider = resolveImageProvider();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+    const { data: identity, error: identityError } = character.approved_reference_id
+      ? await supabase
+          .from("character_references")
+          .select("id, storage_path, is_mock")
+          .eq("id", character.approved_reference_id)
+          .eq("character_id", character.id)
+          .eq("project_id", character.project_id)
+          .eq("status", "approved")
+          .maybeSingle()
+      : { data: null, error: null };
+    if (identityError) throw new Error(identityError.message);
+    const { loadReferenceImages } = await import("./reference-images.server");
+    const references =
+      identity?.storage_path && !identity.is_mock && provider.supportsReferenceImages
+        ? await loadReferenceImages(supabase, [
+            {
+              id: identity.id,
+              type: "character",
+              storagePath: identity.storage_path,
+              label: `Character identity: ${character.name}`,
+            },
+          ])
+        : [];
+
     const created: Database["public"]["Tables"]["character_references"]["Row"][] = [];
     for (let i = 0; i < data.count; i += 1) {
-      const image = await provider.generate({ prompt, aspect });
+      const image = await provider.generate({ prompt, aspect, references });
       const bytes = Uint8Array.from(atob(image.base64), (c) => c.charCodeAt(0));
       const ext = image.contentType === "image/svg+xml" ? "svg" : "png";
       const path = `${userId}/${character.project_id}/${character.id}/${crypto.randomUUID()}.${ext}`;
@@ -105,15 +129,25 @@ export const signReferenceUrls = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     if (data.paths.length === 0) return { urls: {} as Record<string, string> };
 
-    const { data: owned, error } = await context.supabase
-      .from("character_references")
-      .select("storage_path")
-      .in("storage_path", data.paths);
-    if (error) throw new Error(error.message);
+    const [characters, locations] = await Promise.all([
+      context.supabase
+        .from("character_references")
+        .select("storage_path")
+        .in("storage_path", data.paths),
+      context.supabase
+        .from("locations")
+        .select("reference_storage_path")
+        .in("reference_storage_path", data.paths),
+    ]);
+    if (characters.error) throw new Error(characters.error.message);
+    if (locations.error) throw new Error(locations.error.message);
 
-    const allowed = (owned ?? [])
-      .map((row) => row.storage_path)
-      .filter((path): path is string => typeof path === "string");
+    const allowed = [
+      ...new Set([
+        ...(characters.data ?? []).map((row) => row.storage_path),
+        ...(locations.data ?? []).map((row) => row.reference_storage_path),
+      ]),
+    ].filter((path): path is string => typeof path === "string");
     if (allowed.length === 0) return { urls: {} as Record<string, string> };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

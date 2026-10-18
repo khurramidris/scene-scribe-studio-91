@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 import { StudioShell } from "@/components/layout/StudioShell";
 import { ProjectNav } from "@/components/studio/ProjectNav";
+import { ImageUploadButton } from "@/components/studio/ImageUploadButton";
+import { LocationLibrary } from "@/components/studio/LocationLibrary";
 import { MockBadge, StatusBadge } from "@/components/studio/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { generateCharacterImages, signReferenceUrls } from "@/lib/character-image.functions";
 import { generateStory } from "@/lib/story.functions";
+import { IMAGE_UPLOAD_HELP } from "@/lib/image-upload";
+import { uploadStudioImage } from "@/lib/image-upload.service";
+import { registerReferenceUpload } from "@/lib/reference-upload.functions";
+import { useAuth } from "@/modules/auth/useAuth";
 import {
   characterKeys,
   charactersQuery,
@@ -41,13 +47,13 @@ export const Route = createFileRoute("/_authenticated/projects/$projectId_/chara
   staticData: { sitemap: false },
   head: () => ({
     meta: [
-      { title: "Character studio — Backlot Studio" },
+      { title: "Characters & sets — Backlot Studio" },
       {
         name: "description",
         content:
           "Build character profiles, relationships and a locked visual identity reference library.",
       },
-      { property: "og:title", content: "Character studio — Backlot Studio" },
+      { property: "og:title", content: "Characters & sets — Backlot Studio" },
       {
         property: "og:description",
         content:
@@ -106,7 +112,10 @@ function CharacterStudio() {
         <ArrowLeft className="size-4" />
         {project?.title ?? "Production"}
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold">Character studio</h1>
+      <h1 className="mt-3 text-2xl font-semibold">Characters & sets</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Generate references or upload your own images, then lock in each character's identity.
+      </p>
       <ProjectNav projectId={projectId} />
 
       <div className="panel mt-6 flex flex-wrap items-end gap-3 rounded-xl border border-border p-5">
@@ -180,7 +189,10 @@ function CharacterStudio() {
                 .catch((error: Error) => toast.error(error.message));
             }}
           >
-            <select name="from" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+            <select
+              name="from"
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            >
               {characters.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -188,7 +200,10 @@ function CharacterStudio() {
               ))}
             </select>
             <Input name="relationship" placeholder="is the estranged sister of" />
-            <select name="to" className="h-9 rounded-md border border-input bg-transparent px-3 text-sm">
+            <select
+              name="to"
+              className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+            >
               {characters.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -204,7 +219,10 @@ function CharacterStudio() {
               const from = characters.find((c) => c.id === rel.from_character_id)?.name ?? "—";
               const to = characters.find((c) => c.id === rel.to_character_id)?.name ?? "—";
               return (
-                <li key={rel.id} className="flex items-center gap-2 rounded-md border border-border p-2">
+                <li
+                  key={rel.id}
+                  className="flex items-center gap-2 rounded-md border border-border p-2"
+                >
                   <span>
                     <strong>{from}</strong> {rel.relationship} <strong>{to}</strong>
                   </span>
@@ -224,6 +242,7 @@ function CharacterStudio() {
           </ul>
         </section>
       ) : null}
+      <LocationLibrary projectId={projectId} />
     </StudioShell>
   );
 }
@@ -240,6 +259,8 @@ function CharacterCard({
   references: CharacterReference[];
 }) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const register = useServerFn(registerReferenceUpload);
   const runImages = useServerFn(generateCharacterImages);
   const sign = useServerFn(signReferenceUrls);
   const [kind, setKind] = useState<ReferenceKind>("appearance");
@@ -286,6 +307,34 @@ function CharacterCard({
           ? "Placeholder images created — no image provider is configured."
           : "Appearance options generated.",
       );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      if (!user) throw new Error("Sign in first.");
+      return uploadStudioImage(
+        file,
+        "character-references",
+        `${user.id}/${projectId}/character/${character.id}/`,
+        (storagePath) =>
+          register({
+            data: {
+              target: "character",
+              entityId: character.id,
+              storagePath,
+              mimeType: file.type as "image/png" | "image/jpeg" | "image/webp",
+              originalName: file.name.slice(0, 200),
+              kind,
+              label: label.trim(),
+            },
+          }),
+      );
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Image uploaded. Choose Lock in to use it as this character's identity.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -394,6 +443,7 @@ function CharacterCard({
             <Label>Variation label (optional)</Label>
             <Input
               value={label}
+              maxLength={120}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="Wedding outfit, episode 4"
             />
@@ -406,7 +456,15 @@ function CharacterCard({
             )}
             {generate.isPending ? "Generating…" : "Generate 3 options"}
           </Button>
+          <ImageUploadButton
+            label="Upload your image"
+            busy={upload.isPending}
+            onPick={(file) => upload.mutate(file)}
+          />
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {IMAGE_UPLOAD_HELP}. Uploaded images can be locked in alongside generated options.
+        </p>
 
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {references.map((reference) => {
@@ -418,7 +476,11 @@ function CharacterCard({
                 className={`overflow-hidden rounded-lg border ${approved ? "border-emerald-500/60" : "border-border"}`}
               >
                 {src ? (
-                  <img src={src} alt={reference.label ?? character.name} className="aspect-[2/3] w-full object-cover" />
+                  <img
+                    src={src}
+                    alt={reference.label ?? character.name}
+                    className="aspect-[2/3] w-full object-cover"
+                  />
                 ) : (
                   <div className="aspect-[2/3] w-full animate-pulse bg-secondary" />
                 )}
@@ -428,6 +490,9 @@ function CharacterCard({
                       {REFERENCE_KIND_LABELS[reference.kind]}
                     </span>
                     {reference.is_mock ? <MockBadge /> : null}
+                    {reference.provider === "upload" ? (
+                      <span className="text-muted-foreground">Uploaded</span>
+                    ) : null}
                   </div>
                   {reference.label ? <p className="truncate">{reference.label}</p> : null}
                   <div className="flex gap-1">

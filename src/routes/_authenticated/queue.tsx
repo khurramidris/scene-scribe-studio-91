@@ -98,13 +98,22 @@ function QueuePage() {
                   </span>
                 ) : null}
                 <div className="ml-auto flex items-center gap-2">
-                  <Link
-                    to="/projects/$projectId/storyboard"
-                    params={{ projectId: job.project_id }}
-                    className="text-xs text-muted-foreground underline hover:text-foreground"
-                  >
-                    Open shot
-                  </Link>
+                  {job.project_id ? (
+                    <Link
+                      to="/projects/$projectId/storyboard"
+                      params={{ projectId: job.project_id }}
+                      className="text-xs text-muted-foreground underline hover:text-foreground"
+                    >
+                      Open shot
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/single-video"
+                      className="text-xs text-muted-foreground underline hover:text-foreground"
+                    >
+                      Open video
+                    </Link>
+                  )}
                   {isActive(job) ? (
                     <>
                       <Button

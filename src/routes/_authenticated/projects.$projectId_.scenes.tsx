@@ -17,6 +17,7 @@ import { toast } from "sonner";
 
 import { StudioShell } from "@/components/layout/StudioShell";
 import { ProjectNav } from "@/components/studio/ProjectNav";
+import { LocationLibrary } from "@/components/studio/LocationLibrary";
 import { MockBadge, StatusBadge } from "@/components/studio/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +156,7 @@ function ScenesWorkspace() {
           them.
         </p>
         <ProjectNav projectId={projectId} />
+        <LocationLibrary projectId={projectId} open={false} />
 
         <section className="mt-6 grid gap-3 rounded-lg border border-border bg-card p-4 md:grid-cols-2">
           <div>

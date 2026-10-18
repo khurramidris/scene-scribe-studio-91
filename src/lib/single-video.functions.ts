@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { UPLOAD_BUCKET } from "./storyboard.functions";
@@ -7,8 +9,7 @@ import { UPLOAD_BUCKET } from "./storyboard.functions";
 /** Guard against runaway spending: concurrent renders per user. */
 export const MAX_ACTIVE_VIDEO_JOBS = 3;
 
-type Ctx = { supabase: any; userId: string };
-
+type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
 const ACTIVE_STATES = ["queued", "submitting", "processing", "downloading"] as const;
 
@@ -61,11 +62,23 @@ export const registerUserImage = createServerFn({ method: "POST" })
       projectId = shot.project_id;
     }
 
+    if (projectId) {
+      const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .select("id")
+        .eq("id", projectId)
+        .maybeSingle();
+      if (projectError) throw new Error(projectError.message);
+      if (!project) throw new Error("Production not found.");
+    }
+    const { readStoredImage } = await import("./reference-images.server");
+    const { bytes } = await readStoredImage(
+      supabase,
+      UPLOAD_BUCKET,
+      data.storagePath,
+      data.mimeType,
+    );
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { error: missing } = await db.storage
-      .from(UPLOAD_BUCKET)
-      .createSignedUrl(data.storagePath, 60);
-    if (missing) throw new Error("The uploaded image could not be found in storage.");
 
     const { data: row, error: insertError } = await db
       .from("user_images")
@@ -76,7 +89,7 @@ export const registerUserImage = createServerFn({ method: "POST" })
         role: data.role,
         storage_path: data.storagePath,
         mime_type: data.mimeType,
-        file_size_bytes: data.fileSizeBytes ?? null,
+        file_size_bytes: bytes.byteLength,
         original_name: data.originalName ?? null,
       })
       .select("*")
@@ -127,10 +140,10 @@ export const deleteUserImage = createServerFn({ method: "POST" })
  * Shared by the single-video page and the storyboard studio.
  */
 export async function loadUploadedFrames(
-  supabase: any,
+  supabase: SupabaseClient<Database>,
   entries: { id: string | null | undefined; role: "first_frame" | "last_frame" }[],
 ) {
-  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  const { readStoredImage } = await import("./reference-images.server");
   const images: { base64: string; mimeType: string; role: "first_frame" | "last_frame" }[] = [];
   for (const entry of entries) {
     if (!entry.id) continue;
@@ -141,13 +154,15 @@ export async function loadUploadedFrames(
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!image) throw new Error("That uploaded image was not found.");
-    const { data: blob, error: dlError } = await db.storage
-      .from(UPLOAD_BUCKET)
-      .download(image.storage_path);
-    if (dlError || !blob) throw new Error("The uploaded image could not be read.");
+    const { bytes, mimeType } = await readStoredImage(
+      supabase,
+      UPLOAD_BUCKET,
+      image.storage_path,
+      image.mime_type,
+    );
     images.push({
-      base64: toBase64(new Uint8Array(await blob.arrayBuffer())),
-      mimeType: image.mime_type ?? "image/png",
+      base64: toBase64(bytes),
+      mimeType,
       role: entry.role,
     });
   }
@@ -189,7 +204,7 @@ export const submitSingleVideo = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("owner_id", userId)
       .in("job_type", ["shot_video", "single_video"])
-      .in("state", ACTIVE_STATES as unknown as string[]);
+      .in("state", ACTIVE_STATES);
     if ((active ?? 0) >= MAX_ACTIVE_VIDEO_JOBS) {
       throw new Error(
         `You already have ${active} renders running. Wait for one to finish before starting another.`,
@@ -294,7 +309,11 @@ export const listSingleVideos = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase } = context as Ctx;
     const [videos, jobs] = await Promise.all([
-      supabase.from("single_videos").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase
+        .from("single_videos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50),
       supabase
         .from("production_jobs")
         .select("*")

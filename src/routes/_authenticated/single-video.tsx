@@ -18,9 +18,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
+import { IMAGE_UPLOAD_ACCEPT, IMAGE_UPLOAD_HELP } from "@/lib/image-upload";
+import { uploadStudioImage } from "@/lib/image-upload.service";
 import {
-  deleteUserImage,
   listSingleVideos,
   registerUserImage,
   submitSingleVideo,
@@ -60,7 +60,6 @@ function SingleVideoStudio() {
 
   const runCapabilities = useServerFn(getVideoCapabilities);
   const runRegister = useServerFn(registerUserImage);
-  const runDeleteImage = useServerFn(deleteUserImage);
   const runSubmit = useServerFn(submitSingleVideo);
   const runList = useServerFn(listSingleVideos);
   const runSign = useServerFn(signStudioUrls);
@@ -87,6 +86,19 @@ function SingleVideoStudio() {
   const [end, setEnd] = useState<UploadedImage | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
 
+  useEffect(
+    () => () => {
+      if (start) URL.revokeObjectURL(start.previewUrl);
+    },
+    [start],
+  );
+  useEffect(
+    () => () => {
+      if (end) URL.revokeObjectURL(end.previewUrl);
+    },
+    [end],
+  );
+
   useEffect(() => {
     if (caps && !resolution) setResolution(caps.resolutions[0] ?? "720p");
   }, [caps, resolution]);
@@ -97,11 +109,12 @@ function SingleVideoStudio() {
     () => (history?.videos ?? []).map((v) => v.storage_path).filter(Boolean),
     [history],
   );
+  const videoPathKey = videoPaths.join(",");
 
   useEffect(() => {
-    if (!videoPaths.length) return;
+    if (!videoPathKey) return;
     let cancelled = false;
-    void runSign({ data: { bucket: "shot-videos", paths: videoPaths } })
+    void runSign({ data: { bucket: "shot-videos", paths: videoPathKey.split(",") } })
       .then((res) => {
         if (!cancelled) setUrls((prev) => ({ ...prev, ...res.urls }));
       })
@@ -109,21 +122,22 @@ function SingleVideoStudio() {
     return () => {
       cancelled = true;
     };
-  }, [videoPaths.join(","), runSign]);
+  }, [videoPathKey, runSign]);
 
   const activeJobs = useMemo(() => (history?.jobs ?? []).filter(isActive), [history]);
+  const activeJobKey = activeJobs.map((job) => job.id).join(",");
   const refresh = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ["single-videos"] });
   }, [queryClient]);
 
   // The job row is authoritative: closing the tab never loses a submitted render.
   useEffect(() => {
-    if (!activeJobs.length) return;
+    if (!activeJobKey) return;
     const timer = setInterval(() => {
       void (async () => {
-        for (const job of activeJobs) {
+        for (const jobId of activeJobKey.split(",")) {
           try {
-            await runAdvance({ data: { jobId: job.id } });
+            await runAdvance({ data: { jobId } });
           } catch {
             /* surfaced on the job row */
           }
@@ -132,27 +146,27 @@ function SingleVideoStudio() {
       })();
     }, 10000);
     return () => clearInterval(timer);
-  }, [activeJobs.map((j) => j.id).join(","), runAdvance, refresh]);
+  }, [activeJobKey, runAdvance, refresh]);
 
   const upload = useCallback(
     async (file: File, role: "start" | "end"): Promise<UploadedImage> => {
       if (!user) throw new Error("Sign in first.");
-      const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
-      const path = `${user.id}/single/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("user-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (error) throw new Error(error.message);
-      const row = await runRegister({
-        data: {
-          storagePath: path,
-          mimeType: file.type,
-          fileSizeBytes: file.size,
-          originalName: file.name.slice(0, 200),
-          role,
-        },
-      });
-      return { id: row.id, storagePath: path, previewUrl: URL.createObjectURL(file) };
+      const row = await uploadStudioImage(
+        file,
+        "user-images",
+        `${user.id}/single/`,
+        (storagePath) =>
+          runRegister({
+            data: {
+              storagePath,
+              mimeType: file.type,
+              fileSizeBytes: file.size,
+              originalName: file.name.slice(0, 200),
+              role,
+            },
+          }),
+      );
+      return { id: row.id, storagePath: row.storage_path, previewUrl: URL.createObjectURL(file) };
     },
     [user, runRegister],
   );
@@ -192,16 +206,14 @@ function SingleVideoStudio() {
     onError: (error: Error) => toast.error(error.message),
   });
 
-  const clearImage = async (which: "start" | "end") => {
-    const image = which === "start" ? start : end;
-    if (!image) return;
-    if (which === "start") setStart(null);
-    else setEnd(null);
-    try {
-      await runDeleteImage({ data: { imageId: image.id } });
-    } catch {
-      /* the row is the user's own; a stale row is harmless */
+  const clearImage = (which: "start" | "end") => {
+    if (which === "start") {
+      setStart(null);
+      setEnd(null);
+    } else {
+      setEnd(null);
     }
+    // Removing a form input must not remove images used by queued or saved videos.
   };
 
   const clamped = caps
@@ -245,6 +257,8 @@ function SingleVideoStudio() {
                 label="Starting image (optional)"
                 image={start}
                 busy={startUpload.isPending}
+                disabled={endUpload.isPending || submit.isPending}
+                lockRemoval={endUpload.isPending || submit.isPending}
                 onPick={(file) => startUpload.mutate(file)}
                 onClear={() => void clearImage("start")}
               />
@@ -252,7 +266,8 @@ function SingleVideoStudio() {
                 label="Ending image (optional)"
                 image={end}
                 busy={endUpload.isPending}
-                disabled={!supportsEndFrame || !start}
+                disabled={!supportsEndFrame || !start || startUpload.isPending || submit.isPending}
+                lockRemoval={startUpload.isPending || submit.isPending}
                 disabledReason={
                   !supportsEndFrame
                     ? `${capability?.provider ?? "This renderer"} does not support first-and-last-frame generation.`
@@ -262,6 +277,9 @@ function SingleVideoStudio() {
                 onClear={() => void clearImage("end")}
               />
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {IMAGE_UPLOAD_HELP}. Add a starting image to animate your own image.
+            </p>
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <div>
@@ -308,7 +326,13 @@ function SingleVideoStudio() {
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <Button
-                disabled={submit.isPending || prompt.trim().length < 3}
+                disabled={
+                  submit.isPending ||
+                  startUpload.isPending ||
+                  endUpload.isPending ||
+                  prompt.trim().length < 3 ||
+                  !caps?.modes.includes(mode)
+                }
                 onClick={() => submit.mutate()}
               >
                 {submit.isPending ? (
@@ -403,7 +427,9 @@ function SingleVideoStudio() {
                         ) : null}
                       </div>
                     </div>
-                    <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{video.prompt}</p>
+                    <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                      {video.prompt}
+                    </p>
                   </div>
                 );
               })}
@@ -420,6 +446,7 @@ function ImageSlot(props: {
   image: UploadedImage | null;
   busy: boolean;
   disabled?: boolean;
+  lockRemoval?: boolean;
   disabledReason?: string;
   onPick: (file: File) => void;
   onClear: () => void;
@@ -440,6 +467,7 @@ function ImageSlot(props: {
               className="absolute right-1 top-1 rounded bg-background/80 p-1"
               aria-label="Remove image"
               onClick={props.onClear}
+              disabled={props.lockRemoval || props.busy}
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -462,7 +490,7 @@ function ImageSlot(props: {
         <input
           ref={input}
           type="file"
-          accept="image/png,image/jpeg,image/webp"
+          accept={IMAGE_UPLOAD_ACCEPT}
           className="hidden"
           onChange={(event) => {
             const file = event.target.files?.[0];
