@@ -13,14 +13,21 @@ export function StudioShell({ children }: { children: ReactNode }) {
   return (
     <div className="tech-grid min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link to="/dashboard" className="flex items-center gap-2.5">
             <span className="flex size-6 items-center justify-center rounded-sm bg-primary">
               <Clapperboard className="size-3.5 text-primary-foreground" />
             </span>
             <span className="font-display text-base font-bold tracking-tight">Backlot Studio</span>
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+            <Link
+              to="/single-video"
+              className="text-xs text-muted-foreground transition-colors hover:text-primary"
+              activeProps={{ className: "text-primary" }}
+            >
+              Single video
+            </Link>
             <Link
               to="/queue"
               className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-primary"

@@ -77,12 +77,24 @@ class GatewayImageProvider implements ImageProvider {
   ): Promise<Response> {
     const form = new FormData();
     form.append("model", this.model);
-    form.append("prompt", request.prompt);
+    form.append(
+      "prompt",
+      [
+        request.prompt,
+        "Reference images, in order:",
+        ...references.map((reference, index) => `Image ${index + 1}: ${reference.label}`),
+      ].join("\n"),
+    );
     form.append("size", SIZES[request.aspect]);
     form.append("n", "1");
     references.forEach((reference, index) => {
       const bytes = Uint8Array.from(atob(reference.base64), (c) => c.charCodeAt(0));
-      const ext = reference.mimeType === "image/jpeg" ? "jpg" : "png";
+      const ext =
+        reference.mimeType === "image/jpeg"
+          ? "jpg"
+          : reference.mimeType === "image/webp"
+            ? "webp"
+            : "png";
       form.append(
         "image[]",
         new Blob([bytes as unknown as BlobPart], { type: reference.mimeType }),
@@ -131,9 +143,9 @@ function escapeXml(value: string): string {
 }
 
 export function resolveImageProvider(): ImageProvider {
-  const apiKey = process.env['LOVABLE_API_KEY'] ?? process.env['AI_GATEWAY_API_KEY'];
-  const baseUrl = process.env['AI_GATEWAY_URL'] ?? "https://ai.gateway.lovable.dev/v1";
-  const model = process.env['AI_IMAGE_MODEL'] ?? "google/gemini-3.1-flash-image";
+  const apiKey = process.env["LOVABLE_API_KEY"] ?? process.env["AI_GATEWAY_API_KEY"];
+  const baseUrl = process.env["AI_GATEWAY_URL"] ?? "https://ai.gateway.lovable.dev/v1";
+  const model = process.env["AI_IMAGE_MODEL"] ?? "google/gemini-3.1-flash-image";
   if (!apiKey) return new MockImageProvider();
   return new GatewayImageProvider(apiKey, baseUrl, model);
 }

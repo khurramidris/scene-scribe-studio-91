@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -9,126 +11,35 @@ export const VIDEO_BUCKET = "shot-videos";
 /** Hard ceiling on how many frames one batch request may produce. */
 export const MAX_BATCH_FRAMES = 24;
 
-type Ctx = { supabase: any; userId: string };
-
-function toBase64(bytes: Uint8Array): string {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return binary.length ? btoa(binary) : "";
-}
-
-/** Builds the storyboard prompt from approved shot, character and location material. */
-async function buildFramePlan(supabase: any, shotId: string) {
-  const { data: shot, error } = await supabase
-    .from("shots")
-    .select("*")
-    .eq("id", shotId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!shot) throw new Error("Shot not found.");
-
-  const [{ data: project }, { data: scene }, { data: links }] = await Promise.all([
-    supabase.from("projects").select("format, tone, genre").eq("id", shot.project_id).maybeSingle(),
-    supabase.from("scenes").select("*").eq("id", shot.scene_id).maybeSingle(),
-    supabase.from("shot_characters").select("character_id").eq("shot_id", shot.id),
-  ]);
-
-  const characterIds = (links ?? []).map((l: any) => l.character_id);
-  const { data: characters } = characterIds.length
-    ? await supabase
-        .from("characters")
-        .select("id, name, appearance_prompt, description")
-        .in("id", characterIds)
-    : { data: [] as any[] };
-
-  const { data: refs } = characterIds.length
-    ? await supabase
-        .from("character_references")
-        .select("id, character_id, prompt, storage_path, status, kind")
-        .in("character_id", characterIds)
-        .eq("status", "approved")
-    : { data: [] as any[] };
-
-  const { data: location } = shot.location_id
-    ? await supabase
-        .from("locations")
-        .select("name, description, atmosphere, reference_prompt, reference_storage_path")
-        .eq("id", shot.location_id)
-        .maybeSingle()
-    : { data: null };
-
-  const refByCharacter = new Map<string, any>();
-  for (const ref of refs ?? []) if (!refByCharacter.has(ref.character_id)) refByCharacter.set(ref.character_id, ref);
-
-  const castLines = (characters ?? []).map((c: any) => {
-    const locked = refByCharacter.get(c.id);
-    return `${c.name}: ${locked?.prompt ?? c.appearance_prompt ?? c.description ?? "appearance not locked"}`;
-  });
-
-  const continuity =
-    shot.continuity && typeof shot.continuity === "object" ? JSON.stringify(shot.continuity) : "";
-
-  const prompt = [
-    shot.image_prompt || shot.description || "Cinematic still frame.",
-    shot.framing ? `Framing: ${shot.framing}.` : "",
-    shot.shot_type ? `Shot type: ${shot.shot_type}.` : "",
-    shot.camera_angle ? `Camera angle: ${shot.camera_angle}.` : "",
-    castLines.length ? `Characters (keep these identities exactly): ${castLines.join(" | ")}.` : "",
-    location
-      ? `Location: ${location.name}. ${location.reference_prompt ?? location.description ?? ""} ${location.atmosphere ?? ""}`
-      : scene?.location_name
-        ? `Location: ${scene.location_name}.`
-        : "",
-    scene?.time_of_day ? `Time of day: ${scene.time_of_day}.` : "",
-    shot.lighting ? `Lighting: ${shot.lighting}.` : "",
-    shot.emotional_tone ? `Mood: ${shot.emotional_tone}.` : "",
-    continuity ? `Continuity: ${continuity}.` : "",
-    "Single cinematic storyboard frame, film still, no text, no watermark, no split panels.",
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  const aspect: "portrait" | "landscape" =
-    project?.format === "horizontal_16_9" ? "landscape" : "portrait";
-
-  const referencePaths = (refs ?? [])
-    .map((r: any) => r.storage_path)
-    .filter((p: any): p is string => typeof p === "string")
-    .slice(0, 3);
-
-  return { shot, prompt, aspect, referencePaths, refIds: (refs ?? []).map((r: any) => r.id) };
-}
-
-async function loadReferenceImages(paths: string[]) {
-  if (!paths.length) return [];
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const loaded: { base64: string; mimeType: string; label: string }[] = [];
-  for (const path of paths) {
-    const { data, error } = await supabaseAdmin.storage.from("character-references").download(path);
-    if (error || !data) continue;
-    const bytes = new Uint8Array(await data.arrayBuffer());
-    const mimeType = data.type && data.type !== "application/octet-stream" ? data.type : "image/png";
-    if (mimeType === "image/svg+xml") continue; // mock placeholder, never condition on it
-    loaded.push({ base64: toBase64(bytes), mimeType, label: path });
-  }
-  return loaded;
-}
+type Ctx = { supabase: SupabaseClient<Database>; userId: string };
 
 /** Generates one storyboard alternative for a shot and records it as a job. */
 async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useReferences = true) {
   const { supabase, userId } = ctx;
+  const { buildFramePlan } = await import("./storyboard-plan.server");
+  const { loadReferenceImages } = await import("./reference-images.server");
   const plan = await buildFramePlan(supabase, shotId);
   const shot = plan.shot;
 
   const { resolveImageProvider } = await import("@/services/ai/image.registry.server");
   const provider = resolveImageProvider();
+  if (
+    useReferences &&
+    plan.referenceAssets.length &&
+    !provider.supportsReferenceImages &&
+    !provider.isMock
+  ) {
+    throw new Error(
+      "The image renderer must support reference images to use your selected character and set images.",
+    );
+  }
   // Generated-media rows are written with the privileged client only after the
   // RLS-scoped read above proved the shot belongs to the caller.
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
 
   const references =
     useReferences && provider.supportsReferenceImages
-      ? await loadReferenceImages(plan.referencePaths)
+      ? await loadReferenceImages(supabase, plan.referenceAssets)
       : [];
 
   const fullPrompt = [plan.prompt, extraPrompt].filter(Boolean).join(" ");
@@ -186,8 +97,12 @@ async function renderFrame(ctx: Ctx, shotId: string, extraPrompt?: string, useRe
         prompt: fullPrompt,
         provider: image.provider,
         model: image.model,
-        generation_params: { aspect: plan.aspect, contentType: image.contentType },
-        reference_inputs: plan.refIds,
+        generation_params: {
+          aspect: plan.aspect,
+          contentType: image.contentType,
+          reference_assets: references.length ? plan.referenceAssets : [],
+        },
+        reference_inputs: references.length ? plan.referenceAssets.map((asset) => asset.id) : [],
         used_reference_conditioning: image.usedReferenceConditioning,
         storage_path: path,
         mime_type: image.contentType,
@@ -243,7 +158,7 @@ export const generateStoryboardFrames = createServerFn({ method: "POST" })
         await renderFrame(context as Ctx, data.shotId, data.extraPrompt, data.useReferences),
       );
     }
-    return { frames, isMock: frames.some((f: any) => f.is_mock) };
+    return { frames, isMock: frames.some((f) => f.is_mock) };
   });
 
 const BatchInput = z.object({
@@ -275,9 +190,9 @@ export const generateMissingStoryboards = createServerFn({ method: "POST" })
       .from("storyboard_frames")
       .select("shot_id")
       .eq(column, data.id);
-    const done = new Set((existing ?? []).map((f: any) => f.shot_id));
+    const done = new Set((existing ?? []).map((f) => f.shot_id));
 
-    const pending = (shots ?? []).filter((s: any) => !done.has(s.id)).slice(0, data.limit);
+    const pending = (shots ?? []).filter((s) => !done.has(s.id)).slice(0, data.limit);
 
     let created = 0;
     const failures: { shotId: string; message: string }[] = [];
@@ -292,7 +207,11 @@ export const generateMissingStoryboards = createServerFn({ method: "POST" })
         });
       }
     }
-    return { created, remaining: Math.max(0, (shots ?? []).length - done.size - created), failures };
+    return {
+      created,
+      remaining: Math.max(0, (shots ?? []).length - done.size - created),
+      failures,
+    };
   });
 
 const SelectInput = z.object({ frameId: z.string().uuid() });
@@ -350,7 +269,7 @@ export const signStudioUrls = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => SignInput.parse(input))
   .handler(async ({ data, context }) => {
     if (!data.paths.length) return { urls: {} as Record<string, string> };
-    const tables =
+    const tables: ("storyboard_frames" | "user_images" | "video_takes" | "single_videos")[] =
       data.bucket === STORYBOARD_BUCKET
         ? ["storyboard_frames"]
         : data.bucket === UPLOAD_BUCKET
@@ -365,7 +284,7 @@ export const signStudioUrls = createServerFn({ method: "POST" })
         .in("storage_path", data.paths);
       if (error) throw new Error(error.message);
       for (const row of owned ?? []) {
-        if (typeof (row as any).storage_path === "string") allowed.push((row as any).storage_path);
+        if (typeof row.storage_path === "string") allowed.push(row.storage_path);
       }
     }
     if (!allowed.length) return { urls: {} as Record<string, string> };
@@ -382,7 +301,6 @@ export const signStudioUrls = createServerFn({ method: "POST" })
     }
     return { urls };
   });
-
 
 const RejectFrameInput = z.object({ frameId: z.string().uuid() });
 
